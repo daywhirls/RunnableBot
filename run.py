@@ -4,7 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-# import creds # used for local testing
+import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -15,10 +15,10 @@ GitHub: daywhirls
 """
 
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-TOKEN = str(os.environ.get('TOKEN'))
+#TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -139,10 +139,14 @@ def balanceGroups():
     msg = "One Group. Everyone in Queue goes!\nToons: " + str(queueSize) + "\nFires: " + str(calculateFires(fires))
     return msg
 
-# returns true if user already exists in queue, false otherwise.
-# use this in '!ceo' code to either update value or add new person
-def checkList(tuple):
-    return False
+# returns the index of the user if they exist, or False if DNE
+def checkList(name):
+    for i in range(len(queue)):
+        print(queue[i][0])
+        if queue[i][0].lower() == name.lower():
+            print("Match")
+            return i
+    return -1
 
 def calculateFires(x):
     x = int(x)
@@ -167,15 +171,16 @@ async def on_message(message):
     # if user is already in list, update their parameter
     # handle 2nd argument with their suit level & failing elegantly
     if message.content.startswith('!ceo'):
-
+        # TODO: Make sure name doesn't already exist -- cmp with lower()
         cmd = message.content.split() # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
-        #msg = str(len(cmd))
         if len(cmd) is not 3 or not cmd[2].isdigit():
-            msg = "Failed: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
+            msg = "**Failed**: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
         elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
-            msg = "Failed: Your suit level must be between 8 and 50. Get rekt."
+            msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
+        elif checkList(cmd[1]) is not -1:
+            msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
         else: # we gucci fam
             queue.append((str(cmd[1]), int(cmd[2]), '{0.author.mention}'.format(message)))
             msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nTo edit the entry, type **!remove " + str(cmd[1]) + "** and then re-add it."
@@ -188,7 +193,7 @@ async def on_message(message):
         else :
             msg = "```"
             for i in queue:
-                msg += i[0] + ": [BC " + str(i[1]) + "]\n"
+                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
             msg += "```"
         await client.send_message(message.channel, msg)
 
@@ -197,12 +202,36 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!wipe'):
+        # TODO: Add logic so only certain roles can wipe a queue to prevent trolling
         wipeQueue()
         msg = "Emptied Queue!"
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!help'):
         msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
+        await client.send_message(message.channel, msg)
+
+    elif message.content.startswith('!remove'):
+        msg = ""
+        cmd = message.content.split() # split by spaces
+
+        # Make sure cmd = 2, [!remove -name-]
+        if len(cmd) is not 2:
+            msg = "**Failed**: Must give 1 argument.\nExample: `!remove Runnable`"
+            await client.send_message(message.channel, msg)
+            return
+        # Check queue for this person
+        index = checkList(cmd[1])
+        requestor = '{0.author.mention}'.format(message)
+        if index is -1: # returns False if DNE
+            msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
+        # Verify the person removing the entry actually added it in the first place
+        elif queue[index][2] != requestor:
+            msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
+        else:
+            del queue[index]
+            msg = "**Success**. `" + cmd[1] + "` has been removed from the Queue."
+
         await client.send_message(message.channel, msg)
 
 @client.event
