@@ -4,7 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-# import creds # used for local testing
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -30,7 +30,7 @@ DESIGN:
 
 """
 # LOCAL authentication
-# TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
 TOKEN = str(os.environ.get('TOKEN'))
@@ -128,7 +128,6 @@ def getCountFires(group):
         totalValue += convertSuitValue(i[1])
     avgFireVal = totalValue/queueSize
     fires = calculateFires(avgFireVal)
-    print("getCountFires(): " + str(fires))
     return fires
 
 # divide total number of queued people by 8 to see how to balance people.
@@ -153,9 +152,7 @@ def balanceGroups():
         g2Fires = 0
         # for now, assume there won't be more than 16 queue up.
         halfway = totalValue / 2
-        print("About to get groups...")
         groupOne, groupTwo, g1Fires, g2Fires = shuffleGroups(2, minimumValue(2, queueSize, halfway))
-        print("Got groups! Holy shit!!!")
 
         # Append first group to return msg
         msg = "Group 1: [" + str(g1Fires) + "] Fires\n";
@@ -170,7 +167,7 @@ def balanceGroups():
         return msg
 
     # This msg returns if there is no need to split groups (only 1 group)
-    msg = "Toons: " + str(queueSize) + "\nFires: " + str(calculateFires(fires))
+    msg = "One Group. Everyone in Queue goes!\nToons: " + str(queueSize) + "\nFires: " + str(calculateFires(fires))
     return msg
 
 # returns true if user already exists in queue, false otherwise.
@@ -191,6 +188,19 @@ def calculateFires(x):
     else:
         return 5
 
+def addToQueue(name, level):
+    return True
+
+# check to see if the person who's trying to update them is
+# the person who added them in the first place (to prevent trolling)
+def updatePersonInQueue():
+    return True
+
+# check to see if the person who's trying to update them is
+# the person who added them in the first place (to prevent trolling)
+def removePersonInQueue():
+    return True
+
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -201,6 +211,7 @@ async def on_message(message):
     # if user is already in list, update their parameter
     # handle 2nd argument with their suit level & failing elegantly
     if message.content.startswith('!ceo'):
+        '''
         level = message.content[5:]
         if not level.isdigit():
             msg = "Idk wtf you said. use !help for usage fam"
@@ -209,7 +220,20 @@ async def on_message(message):
             msg = '{0.author.mention}'.format(message) + ' is queued for CEO!'
             #msg = "Your value is " + str(convertSuitValue(int(level))) + "."
         else:
-            msg = 'Your suit level must be between from 8 to 50. Try again.'
+            msg = 'Your suit level must be between from 8 to 50. Get rekt.'
+        '''
+        cmd = message.content.split() # split by spaces
+        msg = ""
+        # make sure the message.content is 3 words: [arg name level]
+        #msg = str(len(cmd))
+        if len(cmd) is not 3 or not cmd[2].isdigit():
+            msg = "Failed: Idk what you mean fam. type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`"
+        elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
+            msg = "Failed: Your suit level must be between 8 and 50. Get rekt."
+        else: # we gucci fam
+            queue.append((str(cmd[1]), int(cmd[2]), '{0.author.mention}'.format(message)))
+            msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nType *!help* to see how to update/remove your entry."
+
 
         await client.send_message(message.channel, msg)
 
@@ -218,7 +242,6 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!queue'):
-        print(str(queue))
         if not queue:
             msg = "List is empty! use `!ceo [BC level]` to add someone!"
         else :
@@ -239,11 +262,9 @@ async def on_message(message):
     elif message.content.startswith('!load'):
         readQueue()
         msg = "Read in file!"
-        print(queue)
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!wipe'):
-        createQueue()
         msg = "Emptied Queue!"
         await client.send_message(message.channel, msg)
 
