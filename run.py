@@ -14,7 +14,6 @@ GitHub: daywhirls
 
 TODO:
     - Allow Discord server staff to remove anyone's entry (in case of trolling)
-    - Limit the bot to only be usable in certain channels
 """
 
 # LOCAL authentication
@@ -123,7 +122,7 @@ def balanceGroups(numGroups):
 
     # sort queue and evenly distribute them across numGroups amount of groups
     #tempList.sort()
-    tempList.sort(key=lambda x: x[1])
+    tempList.sort(key=lambda x: x[1], reverse=True)
 
     # distribute members to the teams
     splitList = 0 # increment this to drop into each; reset to 0 if = len(splits)
@@ -148,7 +147,7 @@ def balanceGroups(numGroups):
     for i in range(len(splits)):
         tempMsg = ""
         # form msg string for one group, append it to final msg each time
-        tempMsg = "Group " + str(i+1) + ":\t**" + str(fireNums[i]) + " Fires**\n";
+        tempMsg = "__Group " + str(i+1) + "__\t**" + str(fireNums[i]) + " Fires**\n";
         for j in splits[i]:
             #tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
             tempMsg += j[0] + "\n"
@@ -197,8 +196,11 @@ async def on_message(message):
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
         else: # we gucci fam
             queue.append((str(cmd[1]), int(cmd[2]), '{0.author.mention}'.format(message)))
-            msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nTo edit the entry, type **!remove " + str(cmd[1]) + "** and then re-add it."
-
+            msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nTo edit the entry, type **!remove " + str(cmd[1]) + "** and then re-add it.\n\n"
+            msg += "Current Queue:\n```"
+            for i in queue:
+                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
+            msg += "```"
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!queue'):
