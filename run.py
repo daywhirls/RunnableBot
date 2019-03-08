@@ -4,8 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-import math
-import creds # used for local testing
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -13,45 +12,41 @@ Author: David / Runnable
 Discord: Runnable#0001
 GitHub: daywhirls
 
-TODOS:
-    -   Limit the bot to only be usable in certain channel
-    -   Have bot continuously update current-queue channel upon
-        receiving an update in the bot commands channel
-    -   Fix math issue with splitting teams
-    -   Make group splitting work for infinite amount of groups:
-            1)  [loop]  shuffle queue
-            2)          divide evenly into numberOfGroups amt of groups
-            3)
-    ^   OR
-            give 2 commands: splitEven and group 8s
+TODO:
+    - Allow Discord server staff to remove anyone's entry (in case of trolling)
+    - Limit the bot to only be usable in certain channels
 """
 
 # LOCAL authentication
-TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-#TOKEN = str(os.environ.get('TOKEN'))
+TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
 queue = []
 splits = [] # list of smaller group lists
-queue.append(('Runnable', 25, '<@!285861225491857408>')) # PASTE THIS FOR TESTING
-queue.append(('Runnable2', 25, '<@!285861225491857408>'))
-queue.append(('Runnable3', 8, '<@!285861225491857408>'))
-queue.append(('Runnable4', 38, '<@!285861225491857408>'))
-queue.append(('Runnable5', 38, '<@!285861225491857408>'))
-queue.append(('Runnable6', 38, '<@!285861225491857408>'))
-queue.append(('Runnable7', 38, '<@!285861225491857408>'))
-queue.append(('Runnable8', 38, '<@!285861225491857408>'))
-queue.append(('Runnable9', 38, '<@!285861225491857408>'))
-queue.append(('Runnable11', 38, '<@!285861225491857408>'))
-queue.append(('Runnable22', 38, '<@!285861225491857408>'))
-queue.append(('Runnable33', 38, '<@!285861225491857408>'))
-queue.append(('Runnable44', 38, '<@!285861225491857408>'))
-queue.append(('Runnable55', 38, '<@!285861225491857408>'))
-queue.append(('Runnable66', 38, '<@!285861225491857408>'))
-queue.append(('Runnable77', 38, '<@!285861225491857408>'))
+
+# MODIFY/PASTE THESE FOR TESTING
+'''
+queue.append(('Runnable', 25, '<@!285861225491857408>'))
+queue.append(('Static', 50, '<@!285861225491857408>'))
+queue.append(('Ferret', 8, '<@!285861225491857408>'))
+queue.append(('Polar', 38, '<@!285861225491857408>'))
+queue.append(('Trials', 10, '<@!285861225491857408>'))
+queue.append(('Tarnation', 8, '<@!285861225491857408>'))
+queue.append(('Anchovy', 50, '<@!285861225491857408>'))
+queue.append(('Sheriff', 42, '<@!285861225491857408>'))
+queue.append(('Vitamin', 38, '<@!285861225491857408>'))
+queue.append(('Deer', 50, '<@!285861225491857408>'))
+queue.append(('Gorilla', 50, '<@!285861225491857408>'))
+queue.append(('Host', 38, '<@!285861225491857408>'))
+queue.append(('Cold', 35, '<@!285861225491857408>'))
+queue.append(('Noodle', 50, '<@!285861225491857408>'))
+queue.append(('Yikes', 22, '<@!285861225491857408>'))
+queue.append(('Forehead', 12, '<@!285861225491857408>'))
+'''
 
 # Cheese 35 = AVERAGE VALUE needed for 5 fires
 # Fires = (TotalValue / NumOfPeople)
@@ -63,57 +58,6 @@ def convertSuitValue(level):
 def wipeQueue():
     queue.clear()
 
-# TODO: Don't pass half fires to minimumValue.
-        # split groups first, then check each group's fire count
-
-# Takes total fireValue and numberOfGroups and returns minimum value needed
-# for each group to have the highest possible even fire amount
-# first param numGroups or queueSize??
-def minimumValue(numGroups, queueSize, fireValue):
-    # hardcoded max groupsize = 2 for now, fireValue = half the total value
-    print("fireValue: " + str(fireValue))
-    print("queueSize: " + str(queueSize))
-    print("numGroups: " + str(numGroups))
-    numFires = fireValue // (queueSize / 2)
-    print("minimumValue(): " + str(numFires))
-    # numFires is the highest each group can be
-    if numFires < 17:
-        return 1
-    elif numFires < 33:
-        return 2
-    elif numFires < 48:
-        return 3
-    elif numFires < 63:
-        return 4
-    else:
-        return 5
-
-# repeatedly shuffles queue until all groups satisfy the minumum fireValue
-# minumumValue is called before this, and that value is fireValue
-def shuffleGroups(numGroups, minFires):
-    print("MinFires: " + str(minFires))
-    satisfied = False
-    tempList = copy.copy(queue)
-    group1 = []
-    group2 = []
-
-    while not satisfied:
-        print("Shuffling list...")
-        shuffle(tempList)
-
-        # break into 2 groups
-        group1 = tempList[::2]
-        group2 = tempList[1::2]
-
-        # check both groups fires using calculateFires(numberInGroup / fireVal)
-        groupOneFires = getCountFires(group1)
-        groupTwoFires = getCountFires(group2)
-
-        #check both groups fires to see if they equal minFires
-        if groupOneFires >= minFires and groupTwoFires >= minFires:
-            satisfied = True
-
-    return group1, group2, groupOneFires, groupTwoFires
 
 # Makes sure the user's role has acceptable permissions
 def verifyRole(role):
@@ -133,6 +77,7 @@ def getCountFires(group):
     avgFireVal = totalValue/queueSize
     fires = calculateFires(avgFireVal)
     return fires
+
 
 # Too tired to remember how to get this with floor/ceiling/modulus fam
 def howManyGroups():
@@ -166,46 +111,11 @@ def howManyGroups():
     else:
         return -1
 
+
 # divide total number of queued people by 8 to see how to balance people.
 # find combo of values that is most equally spread across numberOfGroups.
 # This only gets called if queue > 8
 def balanceGroups(numGroups):
-    '''
-    # read in the entire queue
-    # calculate total number of people and total value
-    queueSize = 0
-    totalValue = 0
-    fires = 0
-
-    for i in queue:
-        queueSize += 1
-        totalValue += convertSuitValue(i[1])
-    fires = totalValue/queueSize
-
-    # if queueSize > 8, figure out how to split evenly
-    if queueSize > 8:
-        g1Fires = 0
-        g2Fires = 0
-        # for now, assume there won't be more than 16 queue up.
-        halfway = totalValue / 2
-        groupOne, groupTwo, g1Fires, g2Fires = shuffleGroups(2, minimumValue(2, queueSize, halfway))
-
-        # Append first group to return msg
-        msg = "Group 1: [" + str(g1Fires) + "] Fires\n";
-        for i in groupOne:
-            msg += i[0] + "\t\t\t[BC " + str(i[1]) + "]\n"
-
-        # Append second group to return msg
-        msg += "\n\nGroup 2: [" + str(g2Fires) + "] Fires\n";
-        for i in groupTwo:
-            msg += i[0] + "\t\t\t[BC " + str(i[1]) + "]\n"
-
-        return msg
-
-    # This msg returns if there is no need to split groups (only 1 group)
-    msg = "One Group. Everyone in Queue goes!\nToons: " + str(queueSize) + "\nFires: " + str(calculateFires(fires))
-    return msg
-    '''
 
     tempList = copy.copy(queue)
     splits = [[] for i in range(numGroups)]
@@ -213,7 +123,6 @@ def balanceGroups(numGroups):
 
     # sort queue and evenly distribute them across numGroups amount of groups
     #tempList.sort()
-
     tempList.sort(key=lambda x: x[1])
 
     # distribute members to the teams
@@ -239,21 +148,22 @@ def balanceGroups(numGroups):
     for i in range(len(splits)):
         tempMsg = ""
         # form msg string for one group, append it to final msg each time
-        tempMsg = "Group " + str(i+1) + ": [" + str(fireNums[i]) + "] Fires\n";
+        tempMsg = "Group " + str(i+1) + ":\t**" + str(fireNums[i]) + " Fires**\n";
         for j in splits[i]:
-            tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
+            #tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
+            tempMsg += j[0] + "\n"
         msg += tempMsg + "\n\n"
 
     return msg
 
+
 # returns the index of the user if they exist, or False if DNE
 def checkList(name):
     for i in range(len(queue)):
-        print(queue[i][0])
         if queue[i][0].lower() == name.lower():
-            print("Match")
             return i
     return -1
+
 
 def calculateFires(x):
     x = int(x)
@@ -268,21 +178,19 @@ def calculateFires(x):
     else:
         return 5
 
+
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
 
-    # add user to list of people queuing up
-    # if user is already in list, update their parameter
-    # handle 2nd argument with their suit level & failing elegantly
     if message.content.startswith('!ceo'):
         cmd = message.content.split() # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
         if len(cmd) is not 3 or not cmd[2].isdigit():
-            msg = "**Failed**: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
+            msg = "**Failed**: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\n__Example__:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
         elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
         elif checkList(cmd[1]) is not -1:
@@ -304,6 +212,10 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!split'):
+        if len(queue) is 0:
+            msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
+            await client.send_message(message.channel, msg)
+            return
         numGroups = howManyGroups()
         if numGroups is -1:
             msg = "**Failed**: I can only handle spliting 104 toons at a time. Sorry fam."
@@ -321,17 +233,13 @@ async def on_message(message):
 
         await client.send_message(message.channel, msg)
 
-    elif message.content.startswith('!help'):
-        msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
-        await client.send_message(message.channel, msg)
-
     elif message.content.startswith('!remove'):
         msg = ""
         cmd = message.content.split() # split by spaces
 
         # Make sure cmd = 2, [!remove -name-]
         if len(cmd) is not 2:
-            msg = "**Failed**: Must give 1 argument.\nExample: `!remove Runnable`"
+            msg = "**Failed**: Must give 1 argument.\n__Example__: `!remove Runnable`"
             await client.send_message(message.channel, msg)
             return
         # Check queue for this person
@@ -345,6 +253,51 @@ async def on_message(message):
         else:
             del queue[index]
             msg = "**Success**. `" + cmd[1] + "` has been removed from the Queue."
+
+        await client.send_message(message.channel, msg)
+
+    elif message.content.startswith('!help'):
+        #msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
+        msg = "**Welcome to RunBot by Runnable**\n\n__**COMMANDS**__\n\n"
+
+        # !ceo
+        msg += "`!ceo`\n"
+        msg += "Use this to add yourself or anyone else to the CEO queue!\n"
+        msg += "```Usage:\t  !ceo [Name] [Suit Level]\n"
+        msg += "Example:\t!ceo Runnable 50```\n"
+        msg += "__NOTE__: Name must only be one word, and Suit level must be >= 8 and <= 50.\n\n\n"
+
+        # !remove
+        msg += "`!remove`\n"
+        msg += "Use this to remove someone you added to the queue.\n"
+        msg += "```Usage:\t  !queue [Name in Queue]\n"
+        msg += "Example:\t!queue Runnable```\n"
+        msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
+        msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
+
+        # !queue
+        msg += "`!queue`\n"
+        msg += "Use this to view everyone currently signed up for the CEO run.\n"
+        msg += "```Usage:\t  !queue\n"
+        msg += "Example:\t!queue```\n"
+        msg += "__NOTE__: This command takes no arguments.\n\n\n"
+
+        # !split
+        msg += "`!split`\n"
+        msg += "Use this to evenly split the queue into teams for the highest fires possible.\n"
+        msg += "```Usage:\t  !split\n"
+        msg += "Example:\t!split```\n"
+        msg += "__NOTE__: This command takes no arguments.\n"
+        msg += "__NOTE__: This bot is capable of evenly splitting up to 13 full groups (104 toons) evenly.\n\n\n"
+
+        # !wipe
+        msg += "`!wipe`\n"
+        msg += "Use this to wipe the current queue and start from scratch.\n"
+        msg += "```Usage:\t  !wipe\n"
+        msg += "Example:\t!wipe```\n"
+        msg += "__NOTE__: This command takes no arguments.\n"
+        msg += "__NOTE__: To prevent trolling, **only** these roles can wipe the queue: "
+        msg += "**The Chief Cheese, Cheese Executive Officer, Aged Gouda**"
 
         await client.send_message(message.channel, msg)
 
