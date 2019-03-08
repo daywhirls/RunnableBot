@@ -4,31 +4,16 @@ from random import shuffle
 import copy
 import pickle
 import os
-#import creds # used for local testing
+# import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
-
-DESIGN:
-    SCHEDULE POLL
-        - On a timer, make a poll once a week for people to vote on 2 runs
-        - Once that expires, record results, post the official schedule.
-    QUEUE
-        - One hour before it begins, start assembling team(s)
-        - Accept 1 parameter asking what their suit is, handle user errors
-        - Parse their suit level in accordance with fire chart to calculate fires
-        - Balance teams so everyone gets highest amount of fires
-        - Announce teams by @'ing all users and show how many fires each group is
-        - Allow people to continue adding themselves to queue if needed after time starts
-        - Allow someone to add someone to the list that isn't them
-        - If someone new gets added, let users resort the group
-        - Currently only handles splitting into 2 groups, for now just
-            check if its > 16 and if so, be like sorry fam lol
-
-    HELP
-        - Detailed HELP Message
+Author: David / Runnable
+Discord: Runnable#0001
+GitHub: daywhirls
 
 """
+
 # LOCAL authentication
 #TOKEN = creds.TOKEN
 
@@ -38,13 +23,7 @@ TOKEN = str(os.environ.get('TOKEN'))
 client = discord.Client()
 
 queue = []
-queue.append(('<@!285861225491857408>', 30))
-queue.append(('<@!285861225491857408>', 8))
-queue.append(('<@!285861225491857408>', 20))
-queue.append(('<@!285861225491857408>', 8))
-queue.append(('<@!285861225491857408>', 8))
-queue.append(('<@!285861225491857408>', 12))
-queue.append(('<@!285861225491857408>', 8))
+queue.append(('Runnable', 50, '<@!285861225491857408>'))
 
 # Cheese 8 = 36
 # Cheese 50 = 78
@@ -55,7 +34,7 @@ def convertSuitValue(level):
 
 # create a data structure or textfile to store queued people
 # overwrites previous queue
-def createQueue():
+def wipeQueue():
     queue.clear()
 
 # Takes total fireValue and numberOfGroups and returns minimum value needed
@@ -79,16 +58,6 @@ def minimumValue(numGroups, queueSize, fireValue):
         return 4
     else:
         return 5
-
-# Populates queue with dummy data for testing
-def saveQueue():
-    with open('mylist', 'wb') as f:
-        pickle.dump(queue, f)
-
-def readQueue():
-    with open('mylist', 'rb') as f:
-        queue = pickle.load(f)
-
 
 # repeatedly shuffles queue until all groups satisfy the minumum fireValue
 # minumumValue is called before this, and that value is fireValue
@@ -157,12 +126,12 @@ def balanceGroups():
         # Append first group to return msg
         msg = "Group 1: [" + str(g1Fires) + "] Fires\n";
         for i in groupOne:
-            msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
+            msg += i[0] + "\t\t\t[BC " + str(i[1]) + "]\n"
 
         # Append second group to return msg
         msg += "\n\nGroup 2: [" + str(g2Fires) + "] Fires\n";
         for i in groupTwo:
-            msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
+            msg += i[0] + "\t\t\t[BC " + str(i[1]) + "]\n"
 
         return msg
 
@@ -188,19 +157,6 @@ def calculateFires(x):
     else:
         return 5
 
-def addToQueue(name, level):
-    return True
-
-# check to see if the person who's trying to update them is
-# the person who added them in the first place (to prevent trolling)
-def updatePersonInQueue():
-    return True
-
-# check to see if the person who's trying to update them is
-# the person who added them in the first place (to prevent trolling)
-def removePersonInQueue():
-    return True
-
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -211,61 +167,42 @@ async def on_message(message):
     # if user is already in list, update their parameter
     # handle 2nd argument with their suit level & failing elegantly
     if message.content.startswith('!ceo'):
-        '''
-        level = message.content[5:]
-        if not level.isdigit():
-            msg = "Idk wtf you said. use !help for usage fam"
-        elif int(level) >= 8 and int(level) <= 50:
-            queue.append(('{0.author.mention}'.format(message), int(level)))
-            msg = '{0.author.mention}'.format(message) + ' is queued for CEO!'
-            #msg = "Your value is " + str(convertSuitValue(int(level))) + "."
-        else:
-            msg = 'Your suit level must be between from 8 to 50. Get rekt.'
-        '''
+
         cmd = message.content.split() # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
         #msg = str(len(cmd))
         if len(cmd) is not 3 or not cmd[2].isdigit():
-            msg = "Failed: Idk what you mean fam. type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`"
+            msg = "Failed: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\nExample:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
         elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
             msg = "Failed: Your suit level must be between 8 and 50. Get rekt."
         else: # we gucci fam
             queue.append((str(cmd[1]), int(cmd[2]), '{0.author.mention}'.format(message)))
-            msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nType *!help* to see how to update/remove your entry."
+            msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nTo edit the entry, type **!remove " + str(cmd[1]) + "** and then re-add it."
 
-
-        await client.send_message(message.channel, msg)
-
-    elif message.content.startswith('!help'):
-        msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!queue'):
         if not queue:
-            msg = "List is empty! use `!ceo [BC level]` to add someone!"
+            msg = "List is empty! use `!ceo [Name] [8-50]` to add someone!"
         else :
-            msg = ""
+            msg = "```"
             for i in queue:
-                msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
+                msg += i[0] + ": [BC " + str(i[1]) + "]\n"
+            msg += "```"
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!go'):
         msg = balanceGroups()
         await client.send_message(message.channel, msg)
 
-    elif message.content.startswith('!save'):
-        saveQueue()
-        msg = "Saved to file!"
-        await client.send_message(message.channel, msg)
-
-    elif message.content.startswith('!load'):
-        readQueue()
-        msg = "Read in file!"
-        await client.send_message(message.channel, msg)
-
     elif message.content.startswith('!wipe'):
+        wipeQueue()
         msg = "Emptied Queue!"
+        await client.send_message(message.channel, msg)
+
+    elif message.content.startswith('!help'):
+        msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
         await client.send_message(message.channel, msg)
 
 @client.event
