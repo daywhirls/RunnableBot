@@ -185,12 +185,12 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith('!ceo'):
+    if message.content.startswith('!add'):
         cmd = message.content.split() # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
         if len(cmd) is not 3 or not cmd[2].isdigit():
-            msg = "**Failed**: Idk what you mean fam. Type `!ceo [Name] [Suit Level]`.\n__Example__:  `!ceo Runnable 50`\nPlease only use **one word** for your name here."
+            msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Runnable 50`\nPlease only use **one word** for your name here."
         elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
         elif checkList(cmd[1]) is not -1:
@@ -203,7 +203,7 @@ async def on_message(message):
 
     elif message.content.startswith('!queue'):
         if not queue:
-            msg = "List is empty! use `!ceo [Name] [8-50]` to add someone!"
+            msg = "List is empty! use `!add [Name] [8-50]` to add someone!"
         else :
             msg = "```"
             for i in queue:
@@ -257,14 +257,13 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!help'):
-        #msg = "Type `!ceo [Big Cheese Level]` to queue for the CEO.\n ```Ex: !ceo 50```"
         msg = "**Welcome to RunBot by Runnable**\n\n__**COMMANDS**__\n\n"
 
-        # !ceo
-        msg += "`!ceo`\n"
+        # !add
+        msg += "`!add`\n"
         msg += "Use this to add yourself or anyone else to the CEO queue!\n"
-        msg += "```Usage:\t  !ceo [Name] [Suit Level]\n"
-        msg += "Example:\t!ceo Runnable 50```\n"
+        msg += "```Usage:\t  !add [Name] [Suit Level]\n"
+        msg += "Example:\t!add Runnable 50```\n"
         msg += "__NOTE__: Name must only be one word, and Suit level must be >= 8 and <= 50.\n\n\n"
 
         # !remove
