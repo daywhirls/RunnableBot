@@ -181,7 +181,7 @@ def calculateFires(x):
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
-    if message.author == client.user:
+    if message.author == client.user or message.server is None:
         return
 
     if message.content.startswith('!add'):
