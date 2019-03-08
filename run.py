@@ -4,7 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-import creds # used for local testing
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -15,10 +15,10 @@ GitHub: daywhirls
 """
 
 # LOCAL authentication
-TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-#TOKEN = str(os.environ.get('TOKEN'))
+TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -85,6 +85,12 @@ def shuffleGroups(numGroups, minFires):
             satisfied = True
 
     return group1, group2, groupOneFires, groupTwoFires
+
+# Makes sure the user's role has acceptable permissions
+def verifyRole(role):
+    roles = ['The Chief Cheese', 'Cheese Executive Officer', 'Aged Gouda']
+    return role in roles
+
 
 def getCountFires(group):
     queueSize = 0
@@ -203,8 +209,14 @@ async def on_message(message):
 
     elif message.content.startswith('!wipe'):
         # TODO: Add logic so only certain roles can wipe a queue to prevent trolling
-        wipeQueue()
-        msg = "Emptied Queue!"
+        # print('{0.author.top_role}'.format(message))
+        msg = ""
+        if verifyRole('{0.author.top_role}'.format(message)): # User has permission to wipe queue
+            wipeQueue()
+            msg = "Emptied Queue!"
+        else:
+            msg = "**Failed**: You do not have permission to wipe the queue."
+
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!help'):
