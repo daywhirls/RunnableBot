@@ -4,6 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
+# import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -29,7 +30,7 @@ DESIGN:
 
 """
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+# TOKEN = creds.TOKEN
 
 # HEROKU Config Var
 TOKEN = str(os.environ.get('TOKEN'))
@@ -55,7 +56,7 @@ def convertSuitValue(level):
 # create a data structure or textfile to store queued people
 # overwrites previous queue
 def createQueue():
-    queue = []
+    queue.clear()
 
 # Takes total fireValue and numberOfGroups and returns minimum value needed
 # for each group to have the highest possible even fire amount
@@ -83,15 +84,11 @@ def minimumValue(numGroups, queueSize, fireValue):
 def saveQueue():
     with open('mylist', 'wb') as f:
         pickle.dump(queue, f)
-    #with open("test.txt", "w") as file:
-    #    file.write(str(queue))
 
 def readQueue():
     with open('mylist', 'rb') as f:
         queue = pickle.load(f)
-        #print(queue)
-    #with open("test.txt", "r") as file:
-    #    queue = eval(file.readline())
+
 
 # repeatedly shuffles queue until all groups satisfy the minumum fireValue
 # minumumValue is called before this, and that value is fireValue
@@ -102,58 +99,22 @@ def shuffleGroups(numGroups, minFires):
     group1 = []
     group2 = []
 
-    # print new group 1:
-    for i in group1:
-        print(i[1])
-    print("__ group 2 now:___")
-    for i in group2:
-        print(i[1])
-
-    #print("group1: " + str(group1[1]))
-    #print("group2: " + str(group2[1]))
-    # ^ alternatively: list[::2], list[1::2]
-
-    # check both groups fires using calculateFires(numberInGroup / fireVal)
-#    groupTwoFires = getCountFires(group2)
-
-#    print("G1 Val: " + str(groupOneFires))
-#
     while not satisfied:
         print("Shuffling list...")
         shuffle(tempList)
+
         # break into 2 groups
-        #group1 = tempList[0:len(tempList)//2]
-        #group2 = tempList[len(tempList)//2]
         group1 = tempList[::2]
         group2 = tempList[1::2]
-
-        # print new group 1:
-        print("__ group 1 now:___")
-        for i in group1:
-            print(i[1])
-        print("__ group 2 now:___")
-        for i in group2:
-            print(i[1])
-
-        #print("group1: " + str(group1[1]))
-        #print("group2: " + str(group2[1]))
-        # ^ alternatively: list[::2], list[1::2]
 
         # check both groups fires using calculateFires(numberInGroup / fireVal)
         groupOneFires = getCountFires(group1)
         groupTwoFires = getCountFires(group2)
 
-        print("G1 Val: " + str(groupOneFires))
-        print("G2 Val: " + str(groupTwoFires))
-
-
         #check both groups fires to see if they equal minFires
         if groupOneFires >= minFires and groupTwoFires >= minFires:
             satisfied = True
-            print("SATISFIED!!!")
-    # print out the groups
 
-    print("Left Satisfy Loop. Phew!")
     return group1, group2, groupOneFires, groupTwoFires
 
 def getCountFires(group):
@@ -163,7 +124,6 @@ def getCountFires(group):
     avgFireVal = 0
 
     for i in queue:
-        #msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
         queueSize += 1
         totalValue += convertSuitValue(i[1])
     avgFireVal = totalValue/queueSize
@@ -209,25 +169,7 @@ def balanceGroups():
 
         return msg
 
-        # try to split teams as evenly as possible so each group = halfway val
-
-        # Ex: 78 78 58 36 46 63 48 63 78 68 78 58 38 76 63 57
-        # 16 toons -> 2 groups of 8
-        # 986 total value, 493 half
-        # 493/8 = 61.625 = 4 fires for both groups
-        # both groups must add up as close to 493 as possible
-
-        # ideas: shuffle groups until both are guaranteed the highest value? lol
-
-
-        # If uneven, make sure it can give the shorter group
-
-    #print("Number of people: " + queueSize)
-    #print("Total Value: " + totalValue)
-    #print("Number of Fires: " + totalValue/queueSize)
-
-
-
+    # This msg returns if there is no need to split groups (only 1 group)
     msg = "Toons: " + str(queueSize) + "\nFires: " + str(calculateFires(fires))
     return msg
 
@@ -252,7 +194,6 @@ def calculateFires(x):
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
-    #queue = []
     if message.author == client.user:
         return
 
@@ -278,9 +219,12 @@ async def on_message(message):
 
     elif message.content.startswith('!queue'):
         print(str(queue))
-        msg = ""
-        for i in queue:
-            msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
+        if not queue:
+            msg = "List is empty! use `!ceo [BC level]` to add someone!"
+        else :
+            msg = ""
+            for i in queue:
+                msg += i[0] + "\t\t\t\t[BC " + str(i[1]) + "]\n"
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!go'):
