@@ -257,7 +257,7 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!help'):
-        msg = "**Welcome to RunBot by Runnable**\n\n__**COMMANDS**__\n\n"
+        msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n__**COMMANDS**__\n\n"
 
         # !add
         msg += "`!add`\n"
