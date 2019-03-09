@@ -250,8 +250,8 @@ async def on_message(message):
         if index is -1: # returns False if DNE
             msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
         # Verify the person removing the entry actually added it in the first place
-        elif queue[index][2] != requestor:
-            msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
+        #elif queue[index][2] != requestor:
+        #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
         else:
             del queue[index]
             msg = "**Success**. `" + cmd[1] + "` has been removed from the Queue."
