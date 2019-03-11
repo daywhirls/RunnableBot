@@ -4,7 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-#import creds # used for local testing
+import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -17,10 +17,10 @@ TODO:
 """
 
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-TOKEN = str(os.environ.get('TOKEN'))
+#TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -28,7 +28,7 @@ queue = []
 splits = [] # list of smaller group lists
 
 # MODIFY/PASTE THESE FOR TESTING
-'''
+
 queue.append(('Runnable', 25, '<@!285861225491857408>'))
 queue.append(('Static', 50, '<@!285861225491857408>'))
 queue.append(('Ferret', 8, '<@!285861225491857408>'))
@@ -45,7 +45,7 @@ queue.append(('Cold', 35, '<@!285861225491857408>'))
 queue.append(('Noodle', 50, '<@!285861225491857408>'))
 queue.append(('Yikes', 22, '<@!285861225491857408>'))
 queue.append(('Forehead', 12, '<@!285861225491857408>'))
-'''
+
 
 # Cheese 35 = AVERAGE VALUE needed for 5 fires
 # Fires = (TotalValue / NumOfPeople)
@@ -77,6 +77,88 @@ def getCountFires(group):
     fires = calculateFires(avgFireVal)
     return fires
 
+def populateSplits(numGroups):
+    #splits = [[] for i in range(numGroups)]
+    for i in range(numGroups):
+        splits.append([])
+
+
+
+# Swap two people who are the same level ONLY between groups
+# group1 and group2 are indexes of group in splits[]
+# persons come from splits[i][0]
+# groups come from splits[i]
+# So need both group indexes inside splits[].
+# After that, search for the person and check their levels
+# to confirm that they're the same. If not, exit with fail msg
+# Also do basic checking to make sure groups exist & people exist in them
+def swapGroups(personOne, personTwo):
+    personOneLocation = -1
+    personTwoLocation = -1
+    personOneLevel = -1
+    personTwoLevel = -1
+
+    # confirm both people actually exist in lists
+    #print(str(len(splits)))
+
+    '''
+    for group in range(len(splits)):
+        print("Looping thru splits[group]: " + str(splits[group][0]))
+        if splits[group][0] == personOne:
+            personOneLocation = group
+        elif splits[group][0] == personTwo:
+            personTwoLocation = group
+    '''
+    # loop through every split group checking for both names given
+    for i in range(len(splits)):
+        for j in splits[i]:
+            # j[0] is the names
+            if j[0] == personOne:
+                personOneLocation = i # splits[i] is the group
+                personOneLevel = j[1]
+            elif j[0] == personTwo:
+                personTwoLocation = i
+                personTwoLevel = j[1]
+
+    if personOneLocation is -1 or personTwoLocation is -1:
+        msg = "**Failed**: One or neither people exist. Try again fam."
+
+    elif personOneLocation == personTwoLocation:
+        msg = "Uh.. These people are in the same group already fam. Wyd????"
+
+    # only let people swap identical lvls to prevent unfair splits
+    elif personOneLevel is not personTwoLevel:
+        msg = "**Failed**. If this swap happens, one group will have lower fires than desired. You can only swap people that are the same level for now!"
+
+    else: # we gucci fam. Let's swap them bois
+        # personOne -> personTwo's location
+        # personTwo -> personOne's location
+        #splits[personOneLocation][0] = personTwo
+        #splits[personTwoLocation][0] = personOne
+
+        #print("Hopefully arg1: " + str(splits[personOneLocation][][0]))
+        #splits[personOneLevel] = entire group
+
+        for i in splits[personOneLocation]:
+            print("i[0] = " + str(i[0]))
+            if i[0] == personOne:
+                # i[0] = personTwo
+                # needs to convert to list here before I can modify
+                new = list(i)
+                new[0] = personTwo
+                # somehow convert back to tuple and replace old one
+                i = tuple(new)
+        for i in splits[personTwoLocation]:
+            if i[0] == personTwo:
+                # i[0] == personOne
+                # needs to convert to list here before I can modify
+                new = list(i)
+                new[0] = personOne
+                i = tuple(new)
+
+        msg = "**Success**. The split has been done"
+
+    return msg
 
 # Too tired to remember how to get this with floor/ceiling/modulus fam
 def howManyGroups():
@@ -117,7 +199,8 @@ def howManyGroups():
 def balanceGroups(numGroups):
 
     tempList = copy.copy(queue)
-    splits = [[] for i in range(numGroups)]
+    #splits = [[] for i in range(numGroups)]
+    populateSplits(numGroups)
     fireNums = []
 
     # sort queue and evenly distribute them across numGroups amount of groups
@@ -149,6 +232,8 @@ def balanceGroups(numGroups):
         # form msg string for one group, append it to final msg each time
         tempMsg = "__Group " + str(i+1) + "__\t**" + str(fireNums[i]) + " Fires**\n";
         for j in splits[i]:
+            # TODO: Swap the level and names around so it looks nice.
+            # TODO: If lvl is 8 or 9, add a 0 in front of it for formatting
             #tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
             tempMsg += j[0] + "\n"
         msg += tempMsg + "\n\n"
@@ -258,6 +343,16 @@ async def on_message(message):
 
         await client.send_message(message.channel, msg)
 
+    elif message.content.startswith('!swap'):
+        msg = ""
+        cmd = message.content.split()
+        if len(cmd) is not 3:
+            msg = "**Failed**: Must give 2 arg. Example: `!swap Runnable Static`"
+        else:
+            msg = swapGroups(cmd[1], cmd[2])
+
+        await client.send_message(message.channel, msg)
+
     elif message.content.startswith('!help'):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n__**COMMANDS**__\n\n"
 
@@ -273,7 +368,7 @@ async def on_message(message):
         msg += "Use this to remove someone you added to the queue.\n"
         msg += "```Usage:\t  !queue [Name in Queue]\n"
         msg += "Example:\t!queue Runnable```\n"
-        msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
+        #msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
         msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
 
         # !queue
