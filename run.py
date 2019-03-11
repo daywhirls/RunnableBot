@@ -26,6 +26,7 @@ client = discord.Client()
 
 queue = []
 splits = [] # list of smaller group lists
+fireNums = []
 
 # MODIFY/PASTE THESE FOR TESTING
 '''
@@ -57,6 +58,9 @@ def convertSuitValue(level):
 def wipeQueue():
     queue.clear()
 
+# erase previous split groups before re-splitting
+def wipeSplits():
+    splits.clear()
 
 # Makes sure the user's role has acceptable permissions
 def verifyRole(role):
@@ -77,6 +81,94 @@ def getCountFires(group):
     fires = calculateFires(avgFireVal)
     return fires
 
+def populateSplits(numGroups):
+    #splits = [[] for i in range(numGroups)]
+    for i in range(numGroups):
+        splits.append([])
+
+def replaceTuple(new):
+    return 1
+
+# Swap two people who are the same level ONLY between groups
+# group1 and group2 are indexes of group in splits[]
+# persons come from splits[i][0]
+# groups come from splits[i]
+# So need both group indexes inside splits[].
+# After that, search for the person and check their levels
+# to confirm that they're the same. If not, exit with fail msg
+# Also do basic checking to make sure groups exist & people exist in them
+def swapGroups(personOne, personTwo):
+    personOneLocation = -1
+    personTwoLocation = -1
+    personOneLevel = -1
+    personTwoLevel = -1
+
+    # confirm both people actually exist in lists
+    #print(str(len(splits)))
+
+    '''
+    for group in range(len(splits)):
+        print("Looping thru splits[group]: " + str(splits[group][0]))
+        if splits[group][0] == personOne:
+            personOneLocation = group
+        elif splits[group][0] == personTwo:
+            personTwoLocation = group
+    '''
+    # loop through every split group checking for both names given
+    for i in range(len(splits)):
+        for j in splits[i]:
+            # j[0] is the names
+            if j[0] == personOne:
+                personOneLocation = i # splits[i] is the group
+                personOneLevel = j[1]
+            elif j[0] == personTwo:
+                personTwoLocation = i
+                personTwoLevel = j[1]
+
+    if personOneLocation is -1 or personTwoLocation is -1:
+        msg = "**Failed**: One or neither people exist. Try again fam."
+
+    elif personOneLocation == personTwoLocation:
+        msg = "Uh.. These people are in the same group already fam. Wyd????"
+
+    # only let people swap identical lvls to prevent unfair splits
+    elif personOneLevel is not personTwoLevel:
+        msg = "**Failed**. If this swap happens, one group will have lower fires than desired. You can only swap people that are the same level for now!"
+
+    else: # we gucci fam. Let's swap them bois
+        count = 0
+        for i in splits[personOneLocation]:
+            if i[0] == personOne:
+                new = list(i)
+                new[0] = personTwo
+                # convert back to tuple and replace old one
+                splits[personOneLocation][count] = tuple(new)
+            count += 1
+        count = 0
+        for i in splits[personTwoLocation]:
+            if i[0] == personTwo:
+                new = list(i)
+                new[0] = personOne
+                i = tuple(new)
+                splits[personTwoLocation][count] = tuple(new)
+            count += 1
+
+        msg = "**Success**. Swapped " + personOne + " and " + personTwo + ".\n"
+        msg += "__Note__: Re-splitting the queue will override this swap.\n\n"
+        for i in range(len(splits)): # TODO: Put this into printSplits(), not pasted twice
+            tempMsg = ""
+            # form msg string for one group, append it to final msg each time
+            tempMsg = "__Group " + str(i+1) + "__\t**" + str(fireNums[i]) + " Fires**\n";
+            for j in splits[i]:
+                # TODO: Swap the level and names around so it looks nice.
+                # TODO: If lvl is 8 or 9, add a 0 in front of it for formatting
+                #tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
+                tempMsg += j[0] + "\n"
+            msg += tempMsg + "\n"
+
+        return msg
+
+    return msg
 
 # Too tired to remember how to get this with floor/ceiling/modulus fam
 def howManyGroups():
@@ -117,8 +209,9 @@ def howManyGroups():
 def balanceGroups(numGroups):
 
     tempList = copy.copy(queue)
-    splits = [[] for i in range(numGroups)]
-    fireNums = []
+    #splits = [[] for i in range(numGroups)]
+    populateSplits(numGroups)
+    #fireNums = []
 
     # sort queue and evenly distribute them across numGroups amount of groups
     #tempList.sort()
@@ -132,12 +225,6 @@ def balanceGroups(numGroups):
         if splitList is len(splits):
             splitList = 0
 
-    # print statements for testing
-    #print("Number of groups: " + str(numGroups))
-    #print("Number of split lists created: " + str(len(splits)))
-    #print("Len of splits[0]: " + str(len(splits[0])))
-    #print("Len of splits[1]: " + str(len(splits[1])))
-
     # calculate fires for each group
     for i in range(len(splits)):
         fireNums.append(getCountFires(splits[i]))
@@ -149,6 +236,8 @@ def balanceGroups(numGroups):
         # form msg string for one group, append it to final msg each time
         tempMsg = "__Group " + str(i+1) + "__\t**" + str(fireNums[i]) + " Fires**\n";
         for j in splits[i]:
+            # TODO: Swap the level and names around so it looks nice.
+            # TODO: If lvl is 8 or 9, add a 0 in front of it for formatting
             #tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
             tempMsg += j[0] + "\n"
         msg += tempMsg + "\n\n"
@@ -222,6 +311,7 @@ async def on_message(message):
         if numGroups is -1:
             msg = "**Failed**: I can only handle spliting 104 toons at a time. Sorry fam."
         else:
+            wipeSplits()
             msg = balanceGroups(numGroups)
         await client.send_message(message.channel, msg)
 
@@ -258,6 +348,18 @@ async def on_message(message):
 
         await client.send_message(message.channel, msg)
 
+    elif message.content.startswith('!swap'):
+        msg = ""
+        cmd = message.content.split()
+        if len(cmd) is not 3:
+            msg = "**Failed**: Must give 2 arg. Example: `!swap Runnable Static`"
+        elif not splits:
+            msg = "**Failed**: The queue hasn't been split yet fam."
+        else:
+            msg = swapGroups(cmd[1], cmd[2])
+
+        await client.send_message(message.channel, msg)
+
     elif message.content.startswith('!help'):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n__**COMMANDS**__\n\n"
 
@@ -273,7 +375,7 @@ async def on_message(message):
         msg += "Use this to remove someone you added to the queue.\n"
         msg += "```Usage:\t  !queue [Name in Queue]\n"
         msg += "Example:\t!queue Runnable```\n"
-        msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
+        #msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
         msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
 
         # !queue
@@ -290,6 +392,13 @@ async def on_message(message):
         msg += "Example:\t!split```\n"
         msg += "__NOTE__: This command takes no arguments.\n"
         msg += "__NOTE__: This bot is capable of evenly splitting up to 13 full groups (104 toons) evenly.\n\n\n"
+
+        # !swap
+        msg += "`!swap`\n"
+        msg += "Use this to swap two people between two groups.\n"
+        msg += "```Usage:\t  !swap [Name1] [Name2]\n"
+        msg += "Example:\t!swap Runnable Static```\n"
+        msg += "__NOTE__: To prevent unbalancing groups, for now, you can only swap people around who are the same level.\n\n\n"
 
         # !wipe
         msg += "`!wipe`\n"
