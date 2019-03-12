@@ -392,7 +392,11 @@ async def on_message(message):
 
 
     elif message.content.startswith('!help'):
-        msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n__**COMMANDS**__\n\n"
+        msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n"
+
+        msg += "𝟏)\tUse `!add` in #run-queue to register for the CEO each run.\n"
+        msg += "𝟐)\tIf more than 8 people sign up, `!split` will auto organize groups so everyone gets the highest possible amount of fires.\n"
+        msg += "\n__**COMMANDS**__\n\n"
 
         # !add
         msg += "`!add`\n"
