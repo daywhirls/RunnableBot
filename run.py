@@ -4,7 +4,7 @@ from random import shuffle
 import copy
 import pickle
 import os
-#import creds # used for local testing
+import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -17,10 +17,10 @@ TODO:
 """
 
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-TOKEN = str(os.environ.get('TOKEN'))
+#TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -359,6 +359,37 @@ async def on_message(message):
             msg = swapGroups(cmd[1], cmd[2])
 
         await client.send_message(message.channel, msg)
+
+    elif message.content.startswith('!poll'):
+        cmd = message.content.split() # not necessary but swag
+        if not verifyRole('{0.author.top_role}'.format(message)):
+            msg = "**Failed**: Sorry partner. Only certain roles can create a poll."
+            await client.send_message(message.channel, msg)
+        else:
+
+            msg = "**Choose __Weekday__ Schedule**:\n"
+            msg += "🇦  Monday\n"
+            msg += "🇧  Tuesday\n"
+            msg += "🇨  Wednesday\n"
+            msg += "🇩  Thursday\n"
+
+            reactions = ['🇦', '🇧', '🇨', '🇩']
+
+            weekday = await client.send_message(message.channel, msg)
+            for choice in reactions:
+                await client.add_reaction(weekday, choice)
+
+            msg = "**Choose __Weekend__ Schedule**:\n"
+            msg += "🇦  Friday\n"
+            msg += "🇧  Saturday\n"
+            msg += "🇨  Sunday\n"
+
+            reactions = ['🇦', '🇧', '🇨']
+
+            weekend = await client.send_message(message.channel, msg)
+            for choice in reactions:
+                await client.add_reaction(weekend, choice)
+
 
     elif message.content.startswith('!help'):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n__**COMMANDS**__\n\n"
