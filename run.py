@@ -1,10 +1,14 @@
 # Work with Python 3.6
-import discord
+import discord # 0.16.12
+import asyncio
 from random import shuffle
 import copy
 import pickle
 import os
-import creds # used for local testing
+import schedule # 0.6.0
+from datetime import datetime
+from datetime import date
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -17,16 +21,21 @@ TODO:
 """
 
 # LOCAL authentication
-TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-#TOKEN = str(os.environ.get('TOKEN'))
+TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
 queue = []
 splits = [] # list of smaller group lists
 fireNums = []
+
+# each week after schedule vote is counted, store the run times here.
+# will be used for pinging everyone, wiping queue, etc.
+# treat as a FIFO queue. handle the first one, erase it, etc.
+schedule = []
 
 # MODIFY/PASTE THESE FOR TESTING
 '''
@@ -52,6 +61,7 @@ queue.append(('Forehead', 12, '<@!285861225491857408>'))
 # Fires = (TotalValue / NumOfPeople)
 def convertSuitValue(level):
     return int(level) + 28
+
 
 # create a data structure or textfile to store queued people
 # overwrites previous queue
@@ -267,8 +277,60 @@ def calculateFires(x):
         return 5
 
 
+# test channel = '553420403033505792'
+# official channel = '553493689880543242'
+async def schedulePoll():
+    await client.wait_until_ready()
+    message_channel=client.get_channel('553493689880543242') # not used yet swag
+    while not client.is_closed:
+        now = datetime.today().strftime('%a %H:%M')
+        if now == 'Sun 12:00':
+            time = 82800 # sleep 23 hours and then check every minute
+
+            today = datetime.today().strftime('%B %m, %Y')
+            msg = "__**Week of " + today + "**__\n\n"
+
+            msg += "**Choose __Weekday__ Schedule**:\n"
+            msg += "🇦  Monday\n"
+            msg += "🇧  Tuesday\n"
+            msg += "🇨  Wednesday\n"
+            msg += "🇩  Thursday\n"
+
+            reactions = ['🇦', '🇧', '🇨', '🇩']
+
+            weekday = await client.send_message(client.get_channel('553493689880543242'), msg)
+            for choice in reactions:
+                await client.add_reaction(weekday, choice)
+
+            msg = "**Choose __Weekend__ Schedule**:\n"
+            msg += "🇦  Friday\n"
+            msg += "🇧  Saturday\n"
+
+            reactions = ['🇦', '🇧']
+
+            weekend = await client.send_message(client.get_channel('553493689880543242'), msg)
+            for choice in reactions:
+                await client.add_reaction(weekend, choice)
+
+        else:
+            time = 60 # check every minute
+
+        await asyncio.sleep(time)
+
+
+
+async def my_background_task():
+    await client.wait_until_ready()
+    channel = discord.Object(id='channel_id_here')
+    while not client.is_closed:
+        print("Hello, world!")
+        #await client.send_message(channel, counter)
+        await asyncio.sleep(5) # task runs every 5 seconds
+
+
 @client.event
 async def on_message(message):
+    await client.change_presence(game=discord.Game(name='Join the CEO Queue!'))
     # we do not want the bot to reply to itself
     if message.author == client.user or message.server is None:
         return
@@ -360,37 +422,6 @@ async def on_message(message):
 
         await client.send_message(message.channel, msg)
 
-    elif message.content.startswith('!poll'):
-        cmd = message.content.split() # not necessary but swag
-        if not verifyRole('{0.author.top_role}'.format(message)):
-            msg = "**Failed**: Sorry partner. Only certain roles can create a poll."
-            await client.send_message(message.channel, msg)
-        else:
-
-            msg = "**Choose __Weekday__ Schedule**:\n"
-            msg += "🇦  Monday\n"
-            msg += "🇧  Tuesday\n"
-            msg += "🇨  Wednesday\n"
-            msg += "🇩  Thursday\n"
-
-            reactions = ['🇦', '🇧', '🇨', '🇩']
-
-            weekday = await client.send_message(message.channel, msg)
-            for choice in reactions:
-                await client.add_reaction(weekday, choice)
-
-            msg = "**Choose __Weekend__ Schedule**:\n"
-            msg += "🇦  Friday\n"
-            msg += "🇧  Saturday\n"
-            msg += "🇨  Sunday\n"
-
-            reactions = ['🇦', '🇧', '🇨']
-
-            weekend = await client.send_message(message.channel, msg)
-            for choice in reactions:
-                await client.add_reaction(weekend, choice)
-
-
     elif message.content.startswith('!help'):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n"
 
@@ -453,4 +484,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
+client.loop.create_task(schedulePoll())
 client.run(TOKEN)
