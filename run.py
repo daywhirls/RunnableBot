@@ -8,7 +8,7 @@ import os
 import schedule # 0.6.0
 from datetime import datetime
 from datetime import date
-import creds # used for local testing
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -17,14 +17,19 @@ Discord: Runnable#0001
 GitHub: daywhirls
 
 TODO:
-    - Allow Discord server staff to remove anyone's entry (in case of trolling)
+    - Store the poll messages each week so the reactions can be counted
+      to determine and announce the winning days/times.
+    - implement schedule[] FIFO queue that stores day/times of each run
+      and uses event scheduler to ping #run-schedule before each run starts,
+      wipes queue, and then pops off that run and waits for the next one.
+
 """
 
 # LOCAL authentication
-TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-#TOKEN = str(os.environ.get('TOKEN'))
+TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
