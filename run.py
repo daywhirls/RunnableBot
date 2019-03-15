@@ -289,7 +289,7 @@ async def schedulePoll():
     message_channel=client.get_channel('553493689880543242') # not used yet swag
     while not client.is_closed:
         now = datetime.today().strftime('%a %H:%M')
-        if now == 'Thu 22:28':
+        if now == 'Sun 00:00':
             time = 82800 # sleep 23 hours and then check every minute
 
             today = datetime.today().strftime('%B %d, %Y')
