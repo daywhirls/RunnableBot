@@ -8,7 +8,7 @@ import os
 import schedule # 0.6.0
 from datetime import datetime
 from datetime import date
-#import creds # used for local testing
+import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -21,10 +21,10 @@ TODO:
 """
 
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-TOKEN = str(os.environ.get('TOKEN'))
+#TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -281,13 +281,13 @@ def calculateFires(x):
 # official channel = '553493689880543242'
 async def schedulePoll():
     await client.wait_until_ready()
-    message_channel=client.get_channel('553493689880543242') # not used yet swag
+    message_channel=client.get_channel('553420403033505792') # not used yet swag
     while not client.is_closed:
         now = datetime.today().strftime('%a %H:%M')
-        if now == 'Sun 12:00':
+        if now == 'Thu 22:28':
             time = 82800 # sleep 23 hours and then check every minute
 
-            today = datetime.today().strftime('%B %m, %Y')
+            today = datetime.today().strftime('%B %d, %Y')
             msg = "__**Week of " + today + "**__\n\n"
 
             msg += "**Choose __Weekday__ Schedule**:\n"
@@ -298,9 +298,19 @@ async def schedulePoll():
 
             reactions = ['🇦', '🇧', '🇨', '🇩']
 
-            weekday = await client.send_message(client.get_channel('553493689880543242'), msg)
+            weekday = await client.send_message(client.get_channel('553420403033505792'), msg)
             for choice in reactions:
                 await client.add_reaction(weekday, choice)
+
+            msg = "`What Week Day Time? (P.M. EST)`"
+            reactions = ['6⃣', '7⃣', '8⃣', '9⃣']
+            weekdayTime = await client.send_message(client.get_channel('553420403033505792'), msg)
+            for choice in reactions:
+                await client.add_reaction(weekdayTime, choice)
+
+            # send something in between these so it's not so jumbled together
+            #msg = "**-~-~-~-~-~-~-~-~-~-**\n**-~-~-~-~-~-~-~-~-~-**"
+            #await client.send_message(client.get_channel('553420403033505792'), msg)
 
             msg = "**Choose __Weekend__ Schedule**:\n"
             msg += "🇦  Friday\n"
@@ -308,11 +318,19 @@ async def schedulePoll():
 
             reactions = ['🇦', '🇧']
 
-            weekend = await client.send_message(client.get_channel('553493689880543242'), msg)
+            weekend = await client.send_message(client.get_channel('553420403033505792'), msg)
             for choice in reactions:
                 await client.add_reaction(weekend, choice)
 
+            msg = "`What Weekend Time? (P.M. EST)`"
+            reactions = ['2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣', '🔟']
+            weekendTime = await client.send_message(client.get_channel('553420403033505792'), msg)
+            for choice in reactions:
+                await client.add_reaction(weekendTime, choice)
+
+
         else:
+            print("Not time yet..")
             time = 60 # check every minute
 
         await asyncio.sleep(time)
@@ -330,7 +348,7 @@ async def my_background_task():
 
 @client.event
 async def on_message(message):
-    await client.change_presence(game=discord.Game(name='Join the CEO Queue!'))
+    await client.change_presence(game=discord.Game(name="I'm being updated!"))
     # we do not want the bot to reply to itself
     if message.author == client.user or message.server is None:
         return
