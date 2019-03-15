@@ -286,7 +286,7 @@ def calculateFires(x):
 # official channel = '553493689880543242'
 async def schedulePoll():
     await client.wait_until_ready()
-    message_channel=client.get_channel('553420403033505792') # not used yet swag
+    message_channel=client.get_channel('553493689880543242') # not used yet swag
     while not client.is_closed:
         now = datetime.today().strftime('%a %H:%M')
         if now == 'Thu 22:28':
@@ -303,13 +303,13 @@ async def schedulePoll():
 
             reactions = ['🇦', '🇧', '🇨', '🇩']
 
-            weekday = await client.send_message(client.get_channel('553420403033505792'), msg)
+            weekday = await client.send_message(client.get_channel('553493689880543242'), msg)
             for choice in reactions:
                 await client.add_reaction(weekday, choice)
 
             msg = "`What Week Day Time? (P.M. EST)`"
             reactions = ['6⃣', '7⃣', '8⃣', '9⃣']
-            weekdayTime = await client.send_message(client.get_channel('553420403033505792'), msg)
+            weekdayTime = await client.send_message(client.get_channel('553493689880543242'), msg)
             for choice in reactions:
                 await client.add_reaction(weekdayTime, choice)
 
@@ -323,13 +323,13 @@ async def schedulePoll():
 
             reactions = ['🇦', '🇧']
 
-            weekend = await client.send_message(client.get_channel('553420403033505792'), msg)
+            weekend = await client.send_message(client.get_channel('553493689880543242'), msg)
             for choice in reactions:
                 await client.add_reaction(weekend, choice)
 
             msg = "`What Weekend Time? (P.M. EST)`"
             reactions = ['2⃣', '3⃣', '4⃣', '5⃣', '6⃣', '7⃣', '8⃣', '9⃣', '🔟']
-            weekendTime = await client.send_message(client.get_channel('553420403033505792'), msg)
+            weekendTime = await client.send_message(client.get_channel('553493689880543242'), msg)
             for choice in reactions:
                 await client.add_reaction(weekendTime, choice)
 
