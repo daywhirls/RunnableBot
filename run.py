@@ -282,6 +282,12 @@ def calculateFires(x):
         return 5
 
 
+# throw the voting msg id's into a data structure so the bot can return
+# to it at the end of the day to calculate winning schedules and send to schedule[]
+def savePoll():
+    return False
+
+
 # test channel = '553420403033505792'
 # official channel = '553493689880543242'
 async def schedulePoll():
@@ -289,7 +295,7 @@ async def schedulePoll():
     message_channel=client.get_channel('553493689880543242') # not used yet swag
     while not client.is_closed:
         now = datetime.today().strftime('%a %H:%M')
-        if now == 'Sun 00:00':
+        if now == 'Sun 02:00':
             time = 82800 # sleep 23 hours and then check every minute
 
             today = datetime.today().strftime('%B %d, %Y')
@@ -353,7 +359,8 @@ async def my_background_task():
 
 @client.event
 async def on_message(message):
-    await client.change_presence(game=discord.Game(name="I'm being updated!"))
+    #await client.change_presence(game=discord.Game(name="I'm being updated!"))
+    await client.change_presence(game=discord.Game(name="5 Fire C.E.O."))
     # we do not want the bot to reply to itself
     if message.author == client.user or message.server is None:
         return
