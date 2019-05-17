@@ -434,8 +434,8 @@ async def my_background_task():
 
 @client.event
 async def on_message(message):
-    await client.change_presence(game=discord.Game(name="I'm being updated!"))
-    #await client.change_presence(game=discord.Game(name="5 Fire C.E.O."))
+    #await client.change_presence(game=discord.Game(name="I'm being updated!"))
+    await client.change_presence(game=discord.Game(name="5 Fire C.E.O."))
     # we do not want the bot to reply to itself
     if message.author == client.user or message.server is None:
         return
