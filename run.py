@@ -297,6 +297,66 @@ def savePoll():
     return False
 
 
+async def get_logs_from(channel):
+    poll = []
+    async for m in client.logs_from(channel, limit=4):
+        poll.append(m) # unsure what the format here but yoloswag
+    return poll
+
+
+# Receives a list of the messages, calculates which days/times won this week
+# Returns a message to send to the channel to announce winners
+def calculateWeeklySchedule(results):
+
+    # using these to easily format final message by index of emoji reaction
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday"]
+    weektimes = ['6', '7', '8', '9']
+    weekends = ['Friday', 'Saturday']
+    weekendtimes = ['2','3','4','5','6','7','8','9','10']
+
+    weekendTime = results[0]
+    weekend = results[1]
+    weekTime = results[2]
+    weekday = results[3]
+
+    weekdayVotes = []
+    weekTimeVotes = []
+    weekendVotes = []
+    weekendTimeVotes = []
+
+    # grab the list of reactions from each message, calculate which ones win
+    weekdayVotes.append(weekday.reactions[0].count)
+    weekdayVotes.append(weekday.reactions[1].count)
+    weekdayVotes.append(weekday.reactions[2].count)
+    weekdayVotes.append(weekday.reactions[3].count)
+
+    weekTimeVotes.append(weekTime.reactions[0].count)
+    weekTimeVotes.append(weekTime.reactions[1].count)
+    weekTimeVotes.append(weekTime.reactions[2].count)
+    weekTimeVotes.append(weekTime.reactions[3].count)
+
+    weekendVotes.append(weekend.reactions[0].count)
+    weekendVotes.append(weekend.reactions[1].count)
+
+    weekendTimeVotes.append(weekendTime.reactions[0].count)
+    weekendTimeVotes.append(weekendTime.reactions[1].count)
+    weekendTimeVotes.append(weekendTime.reactions[2].count)
+    weekendTimeVotes.append(weekendTime.reactions[3].count)
+    weekendTimeVotes.append(weekendTime.reactions[4].count)
+    weekendTimeVotes.append(weekendTime.reactions[5].count)
+    weekendTimeVotes.append(weekendTime.reactions[6].count)
+    weekendTimeVotes.append(weekendTime.reactions[7].count)
+    weekendTimeVotes.append(weekendTime.reactions[8].count)
+
+    msg = ":alert: This week's CEO Schedule: :alert: \n\n"
+    msg += weekdays[weekdayVotes.index(max(weekdayVotes))] + " at "
+    msg += weektimes[weekTimeVotes.index(max(weekTimeVotes))] + " PM EST.\n"
+    msg += weekends[weekendVotes.index(max(weekendVotes))] + " at "
+    msg += weekendtimes[weekendTimeVotes.index(max(weekendTimeVotes))] + " PM EST.\n"
+
+    return msg
+
+
 # test channel = '553420403033505792'
 # official channel = '553493689880543242'
 async def schedulePoll():
@@ -348,6 +408,12 @@ async def schedulePoll():
             for choice in reactions:
                 await client.add_reaction(weekendTime, choice)
 
+        elif now == 'Mon 02:00': # Calculate results and post in #weekly-schedule
+            # grab last 4 essages from #weekly-schedule and calculate results
+            results = await get_logs_from(client.get_channel('553493689880543242'))
+            announcement = calculateWeeklySchedule(results)
+            await client.send_message(client.get_channel('553493689880543242'), announcement)
+            time = 60 # check every minute
 
         else:
             print("Not time yet..")
@@ -368,8 +434,8 @@ async def my_background_task():
 
 @client.event
 async def on_message(message):
-    #await client.change_presence(game=discord.Game(name="I'm being updated!"))
-    await client.change_presence(game=discord.Game(name="5 Fire C.E.O."))
+    await client.change_presence(game=discord.Game(name="I'm being updated!"))
+    #await client.change_presence(game=discord.Game(name="5 Fire C.E.O."))
     # we do not want the bot to reply to itself
     if message.author == client.user or message.server is None:
         return
