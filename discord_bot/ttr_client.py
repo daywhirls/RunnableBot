@@ -22,6 +22,7 @@ class TTRClient(discord.Client):
         self.splits = []
         self.fireNums = []
         super(TTRClient, self).__init__(*args, **kwargs)
+        self.loop.create_task(self.schedulePoll())
         self.function_map = {
             "!add": self.add_message,
             "!queue": self.queue_message,
