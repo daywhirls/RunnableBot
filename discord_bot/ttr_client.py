@@ -46,10 +46,9 @@ class TTRClient(discord.Client):
 
     def wipeSplits(self):
         self.splits.clear()
-
+        self.fireNums.clear()
     def wipeQueue(self):
         self.queue.clear()
-
     async def get_logs_from(self, channel):
         poll = []
         async for msg in self.logs_from(channel, limit=4):
@@ -58,7 +57,7 @@ class TTRClient(discord.Client):
 
     async def schedulePoll(self):
         await self.wait_until_ready()
-        message_channel = self.get_channel("553493689880543242")  # not used yet swag
+        message_channel = self.get_channel("553420403033505792")  # not used yet swag
         while not self.is_closed:
             now = datetime.today().strftime("%a %H:%M")
             if now == "Sun 02:00":
@@ -76,7 +75,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧", "🇨", "🇩"]
 
                 weekday = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    self.get_channel("553420403033505792"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekday, choice)
@@ -84,7 +83,7 @@ class TTRClient(discord.Client):
                 msg = "`What Week Day Time? (P.M. EST)`"
                 reactions = ["6⃣", "7⃣", "8⃣", "9⃣"]
                 weekdayTime = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    self.get_channel("553420403033505792"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekdayTime, choice)
@@ -100,7 +99,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧"]
 
                 weekend = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    self.get_channel("553420403033505792"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekend, choice)
@@ -108,19 +107,19 @@ class TTRClient(discord.Client):
                 msg = "`What Weekend Time? (P.M. EST)`"
                 reactions = ["2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"]
                 weekendTime = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    self.get_channel("553420403033505792"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekendTime, choice)
 
-            elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
+            elif now == "Sat 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
                 results = await self.get_logs_from(
-                    self.get_channel("553493689880543242")
+                    self.get_channel("553420403033505792")
                 )
                 announcement = calculateWeeklySchedule(results)
                 await self.send_message(
-                    self.get_channel("553493689880543242"), announcement
+                    self.get_channel("553420403033505792"), announcement
                 )
                 time = 60  # check every minute
 
@@ -150,7 +149,7 @@ class TTRClient(discord.Client):
         elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
         elif checkList(self.queue, cmd[1]) is not -1:
-            msg = "**Failed**: This person already exists in the self.queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
+            msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
         else:  # we gucci fam
             self.queue.append(
                 (str(cmd[1]), int(cmd[2]), "{0.author.mention}".format(message))
@@ -161,11 +160,11 @@ class TTRClient(discord.Client):
                 + str(cmd[1])
                 + " [BC "
                 + str(cmd[2])
-                + "]` to the self.queue.\nTo edit the entry, type **!remove "
+                + "]` to the queue.\nTo edit the entry, type **!remove "
                 + str(cmd[1])
                 + "** and then re-add it.\n\n"
             )
-            msg += "Current self.queue:\n```"
+            msg += "Current queue:\n```"
             for i in self.queue:
                 msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
             msg += "```"
@@ -183,7 +182,7 @@ class TTRClient(discord.Client):
 
     async def split_message(self, message):
         if len(self.queue) is 0:
-            msg = "**Failed**: There's nobody in the self.queue fam.\n```U cAnT dO tHaT```"
+            msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
             await self.send_message(message.channel, msg)
             return
         numGroups = howManyGroups(self.queue)
@@ -200,11 +199,11 @@ class TTRClient(discord.Client):
         msg = ""
         if verifyRole(
             "{0.author.top_role}".format(message)
-        ):  # User has permission to wipe self.queue
+        ):  # User has permission to wipe queue
             self.wipeQueue()
-            msg = "Emptied self.queue!"
+            msg = "Emptied queue!"
         else:
-            msg = "**Failed**: You do not have permission to wipe the self.queue."
+            msg = "**Failed**: You do not have permission to wipe the queue."
 
         await self.send_message(message.channel, msg)
 
@@ -217,17 +216,17 @@ class TTRClient(discord.Client):
             msg = "**Failed**: Must give 1 argument.\n__Example__: `!remove Runnable`"
             await self.send_message(message.channel, msg)
             return
-        # Check self.queue for this person
+        # Check queue for this person
         index = checkList(self.queue, cmd[1])
         requestor = "{0.author.mention}".format(message)
         if index is -1:  # returns False if DNE
-            msg = "This person does not exist fam.\nTry again or type **!self.queue** to view the self.queue."
+            msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
         # Verify the person removing the entry actually added it in the first place
-        # elif self.queue[index][2] != requestor:
-        #    msg = "**Failed**: You cannot remove someone that you didn't add to the self.queue.\n```Get rekt.```"
+        # elif queue[index][2] != requestor:
+        #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
         else:
             del self.queue[index]
-            msg = "**Success**. `" + cmd[1] + "` has been removed from the self.queue."
+            msg = "**Success**. `" + cmd[1] + "` has been removed from the queue."
 
         await self.send_message(message.channel, msg)
 
@@ -237,7 +236,7 @@ class TTRClient(discord.Client):
         if len(cmd) is not 3:
             msg = "**Failed**: Must give 2 arg. Example: `!swap Runnable Static`"
         elif not self.splits:
-            msg = "**Failed**: The self.queue hasn't been split yet fam."
+            msg = "**Failed**: The queue hasn't been split yet fam."
         else:
             msg = swapGroups(cmd[1], cmd[2], self.splits, self.fireNums)
 
@@ -246,35 +245,35 @@ class TTRClient(discord.Client):
     async def help_message(self, message):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n"
 
-        msg += "𝟏)\tUse `!add` in #run-self.queue to register for the CEO each run.\n"
+        msg += "𝟏)\tUse `!add` in #run-queue to register for the CEO each run.\n"
         msg += "𝟐)\tIf more than 8 people sign up, `!split` will auto organize groups so everyone gets the highest possible amount of fires.\n"
         msg += "\n__**COMMANDS**__\n\n"
 
         # !add
         msg += "`!add`\n"
-        msg += "Use this to add yourself or anyone else to the CEO self.queue!\n"
+        msg += "Use this to add yourself or anyone else to the CEO queue!\n"
         msg += "```Usage:\t  !add [Name] [Suit Level]\n"
         msg += "Example:\t!add Runnable 50```\n"
         msg += "__NOTE__: Name must only be one word, and Suit level must be >= 8 and <= 50.\n\n\n"
 
         # !remove
         msg += "`!remove`\n"
-        msg += "Use this to remove someone you added to the self.queue.\n"
-        msg += "```Usage:\t  !self.queue [Name in self.queue]\n"
-        msg += "Example:\t!self.queue Runnable```\n"
-        # msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the self.queue.\n"
+        msg += "Use this to remove someone you added to the queue.\n"
+        msg += "```Usage:\t  !queue [Name in queue]\n"
+        msg += "Example:\t!queue Runnable```\n"
+        # msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
         msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
 
-        # !self.queue
-        msg += "`!self.queue`\n"
+        # !queue
+        msg += "`!queue`\n"
         msg += "Use this to view everyone currently signed up for the CEO run.\n"
-        msg += "```Usage:\t  !self.queue\n"
-        msg += "Example:\t!self.queue```\n"
+        msg += "```Usage:\t  !queue\n"
+        msg += "Example:\t!queue```\n"
         msg += "__NOTE__: This command takes no arguments.\n\n\n"
 
         # !split
         msg += "`!split`\n"
-        msg += "Use this to evenly split the self.queue into teams for the highest fires possible.\n"
+        msg += "Use this to evenly split the queue into teams for the highest fires possible.\n"
         msg += "```Usage:\t  !split\n"
         msg += "Example:\t!split```\n"
         msg += "__NOTE__: This command takes no arguments.\n"
@@ -289,11 +288,11 @@ class TTRClient(discord.Client):
 
         # !wipe
         msg += "`!wipe`\n"
-        msg += "Use this to wipe the current self.queue and start from scratch.\n"
+        msg += "Use this to wipe the current queue and start from scratch.\n"
         msg += "```Usage:\t  !wipe\n"
         msg += "Example:\t!wipe```\n"
         msg += "__NOTE__: This command takes no arguments.\n"
-        msg += "__NOTE__: To prevent trolling, **only** these roles can wipe the self.queue: "
+        msg += "__NOTE__: To prevent trolling, **only** these roles can wipe the queue: "
         msg += "**The Chief Cheese, Cheese Executive Officer, Aged Gouda**"
 
         await self.send_message(message.channel, msg)
