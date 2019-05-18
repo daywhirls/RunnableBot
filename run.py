@@ -8,7 +8,7 @@ import os
 import schedule # 0.6.0
 from datetime import datetime
 from datetime import date
-import creds # used for local testing
+#import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -26,10 +26,10 @@ TODO:
 """
 
 # LOCAL authentication
-TOKEN = creds.TOKEN
+#TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-#TOKEN = str(os.environ.get('TOKEN'))
+TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
