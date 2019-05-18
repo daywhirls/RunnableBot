@@ -139,7 +139,7 @@ class TTRClient(discord.Client):
         command = message.content.split(" ")[0]
         message_fn = self.function_map.get(command)
         if message_fn is not None:
-            message_fn(message)
+            await message_fn(message)
 
     async def add_message(self, message):
         cmd = message.content.split()  # split by spaces
