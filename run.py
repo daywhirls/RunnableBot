@@ -8,7 +8,7 @@ import os
 import schedule # 0.6.0
 from datetime import datetime
 from datetime import date
-#import creds # used for local testing
+import creds # used for local testing
 
 """
 ##### 5 FIRE CEO BOT #####
@@ -26,10 +26,10 @@ TODO:
 """
 
 # LOCAL authentication
-#TOKEN = creds.TOKEN
+TOKEN = creds.TOKEN
 
 # HEROKU Config Var
-TOKEN = str(os.environ.get('TOKEN'))
+#TOKEN = str(os.environ.get('TOKEN'))
 
 client = discord.Client()
 
@@ -441,7 +441,7 @@ async def on_message(message):
         return
 
     if message.content.startswith('!add'):
-        readQueue()
+        #readQueue()
         cmd = message.content.split() # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
@@ -453,8 +453,8 @@ async def on_message(message):
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
         else: # we gucci fam
             queue.append((str(cmd[1]), int(cmd[2]), '{0.author.mention}'.format(message)))
-            storeQueue()
-            readQueue()
+            #storeQueue()
+            #readQueue()
             msg = '{0.author.mention}'.format(message) + " added `" + str(cmd[1]) + " [BC " + str(cmd[2]) + "]` to the queue.\nTo edit the entry, type **!remove " + str(cmd[1]) + "** and then re-add it.\n\n"
             msg += "Current Queue:\n```"
             for i in queue:
@@ -463,11 +463,11 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!queue'):
-        readQueue()
+        #readQueue()
         if not queue:
             msg = "List is empty! use `!add [Name] [8-50]` to add someone!"
         else :
-            readQueue()
+            #readQueue()
             msg = "```"
             for i in queue:
                 msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
@@ -488,11 +488,11 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!wipe'):
-        readQueue()
+        #readQueue()
         msg = ""
         if verifyRole('{0.author.top_role}'.format(message)): # User has permission to wipe queue
             wipeQueue()
-            storeQueue()
+            #storeQueue()
             msg = "Emptied Queue!"
         else:
             msg = "**Failed**: You do not have permission to wipe the queue."
@@ -500,7 +500,7 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!remove'):
-        readQueue()
+        #readQueue()
         msg = ""
         cmd = message.content.split() # split by spaces
 
@@ -519,7 +519,7 @@ async def on_message(message):
         #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
         else:
             del queue[index]
-            storeQueue()
+            #storeQueue()
             msg = "**Success**. `" + cmd[1] + "` has been removed from the Queue."
 
         await client.send_message(message.channel, msg)
