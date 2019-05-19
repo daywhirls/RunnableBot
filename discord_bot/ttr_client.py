@@ -55,9 +55,11 @@ class TTRClient(discord.Client):
             poll.append(msg)
         return poll
 
+    # test channel = '553420403033505792'
+    # official channel = '553493689880543242'
     async def schedulePoll(self):
         await self.wait_until_ready()
-        message_channel = self.get_channel("553420403033505792")  # not used yet swag
+        message_channel = self.get_channel("553493689880543242")  # not used yet swag
         while not self.is_closed:
             now = datetime.today().strftime("%a %H:%M")
             if now == "Sun 02:00":
@@ -75,7 +77,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧", "🇨", "🇩"]
 
                 weekday = await self.send_message(
-                    self.get_channel("553420403033505792"), msg
+                    self.get_channel("553493689880543242"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekday, choice)
@@ -83,7 +85,7 @@ class TTRClient(discord.Client):
                 msg = "`What Week Day Time? (P.M. EST)`"
                 reactions = ["6⃣", "7⃣", "8⃣", "9⃣"]
                 weekdayTime = await self.send_message(
-                    self.get_channel("553420403033505792"), msg
+                    self.get_channel("553493689880543242"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekdayTime, choice)
@@ -99,7 +101,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧"]
 
                 weekend = await self.send_message(
-                    self.get_channel("553420403033505792"), msg
+                    self.get_channel("553493689880543242"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekend, choice)
@@ -107,7 +109,7 @@ class TTRClient(discord.Client):
                 msg = "`What Weekend Time? (P.M. EST)`"
                 reactions = ["2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"]
                 weekendTime = await self.send_message(
-                    self.get_channel("553420403033505792"), msg
+                    self.get_channel("553493689880543242"), msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekendTime, choice)
@@ -115,11 +117,11 @@ class TTRClient(discord.Client):
             elif now == "Sat 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
                 results = await self.get_logs_from(
-                    self.get_channel("553420403033505792")
+                    self.get_channel("553493689880543242")
                 )
                 announcement = calculateWeeklySchedule(results)
                 await self.send_message(
-                    self.get_channel("553420403033505792"), announcement
+                    self.get_channel("553493689880543242"), announcement
                 )
                 time = 60  # check every minute
 
