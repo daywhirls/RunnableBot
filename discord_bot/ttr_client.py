@@ -114,7 +114,7 @@ class TTRClient(discord.Client):
                 for choice in reactions:
                     await self.add_reaction(weekendTime, choice)
 
-            elif now == "Sat 02:00":  # Calculate results and post in #weekly-schedule
+            elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
                 results = await self.get_logs_from(
                     self.get_channel("553493689880543242")
