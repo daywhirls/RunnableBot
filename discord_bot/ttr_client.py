@@ -258,26 +258,24 @@ class TTRClient(discord.Client):
         # !remove
         msg += "`!remove`\n"
         msg += "Use this to remove someone you added to the queue.\n"
-        msg += "```Usage:\t  !queue [Name in queue]\n"
-        msg += "Example:\t!queue Static Void```\n"
+        msg += "```Usage:\t  !remove [Name in queue]\n"
+        msg += "Example:\t!remove Static Void```\n"
         # msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
         msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
 
         # !queue
         msg += "`!queue`\n"
         msg += "Use this to view everyone currently signed up for the CEO run.\n"
-        msg += "```Usage:\t  !queue\n"
-        msg += "Example:\t!queue```\n"
+        msg += "```Usage:\t  !queue```\n"
         msg += "__NOTE__: This command takes no arguments.\n\n\n"
 
         # !split
         msg += "`!split`\n"
         msg += "Use this to evenly split the queue into teams for the highest fires possible.\n"
-        msg += "```Usage:\t  !split\n"
-        msg += "Example:\t!split```\n"
+        msg += "```Usage:\t  !split\n```"
         msg += "__NOTE__: This command takes no arguments.\n"
-        msg += "__NOTE__: This bot is capable of evenly splitting an unlimited amount of groups evenly.\n\n\n"
-        msg += "__NOTE__: Calling !split after groups are already split will reset any swaps done.\n"
+        msg += "__NOTE__: This bot is capable of evenly splitting an unlimited amount of groups evenly.\n"
+        msg += "__NOTE__: Calling !split after groups are already split will reset any swaps done.\n\n\n"
 
 
         # !swap
@@ -285,13 +283,13 @@ class TTRClient(discord.Client):
         msg += "Use this to swap two people between two groups.\n"
         msg += "```Usage:\t  !swap [Name1] [-] [Name2]\n"
         msg += "Example:\t!swap Runnable - Static Void```\n"
+        msg += "__NOTE__: It works with or without spaces around the hyphen!\n\n\n"
         #msg += "__NOTE__: To prevent unbalancing groups, for now, you can only swap people around who are the same level.\n\n\n"
 
         # !wipe
         msg += "`!wipe`\n"
         msg += "Use this to wipe the current queue and start from scratch.\n"
-        msg += "```Usage:\t  !wipe\n"
-        msg += "Example:\t!wipe```\n"
+        msg += "```Usage:\t  !wipe```\n"
         msg += "__NOTE__: This command takes no arguments.\n"
         msg += "__NOTE__: To prevent trolling, **only** these roles can wipe the queue: "
         msg += "**The Chief Cheese, Cheese Executive Officer, Aged Gouda**"
