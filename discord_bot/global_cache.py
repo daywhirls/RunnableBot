@@ -1,2 +1,2 @@
 QUEUE = []
-SPLITS = []
+SPLITS = [] 

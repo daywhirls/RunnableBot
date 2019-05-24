@@ -6,7 +6,7 @@ def verifyRole(role):
 def convertSuitValue(level):
     return int(level) + 28
 
-
+ 
 def getCountFires(group):
     queueSize = 0
     totalValue = 0

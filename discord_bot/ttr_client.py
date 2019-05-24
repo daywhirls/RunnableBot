@@ -146,20 +146,23 @@ class TTRClient(discord.Client):
         cmd = message.content.split()  # split by spaces
         msg = ""
         # make sure the message.content is 3 words: [arg name level]
-        if len(cmd) is not 3 or not cmd[2].isdigit():
-            msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Runnable 50`\nPlease only use **one word** for your name here."
-        elif int(cmd[2]) < 8 or int(cmd[2]) > 50:
+        if not cmd[len(cmd) - 1].isdigit() or len(cmd) < 3:
+            msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Static Void 50`"
+
+        elif int(cmd[(len(cmd) - 1)]) < 8 or int(cmd[(len(cmd) - 1)]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
         elif checkList(self.queue, cmd[1]) is not -1:
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
         else:  # we gucci fam
+            toonName = ' '.join(cmd[1:-1])
             self.queue.append(
-                (str(cmd[1]), int(cmd[2]), "{0.author.mention}".format(message))
+                #(str(cmd[1]), int(cmd[2]), "{0.author.mention}".format(message))
+                (str(toonName), int(cmd[len(cmd) - 1]), "{0.author.mention}".format(message))
             )
             msg = (
                 "{0.author.mention}".format(message)
                 + " added `"
-                + str(cmd[1])
+                + str(toonName)
                 + " [BC "
                 + str(cmd[2])
                 + "]` to the queue.\nTo edit the entry, type **!remove "
@@ -188,13 +191,8 @@ class TTRClient(discord.Client):
             await self.send_message(message.channel, msg)
             return
         numGroups = howManyGroups(self.queue)
-        if numGroups is -1:
-            msg = (
-                "**Failed**: I can only handle spliting 104 toons at a time. Sorry fam."
-            )
-        else:
-            self.wipeSplits()
-            msg = balanceGroups(numGroups, self.queue, self.splits, self.fireNums)
+        self.wipeSplits()
+        msg = balanceGroups(numGroups, self.queue, self.splits, self.fireNums)
         await self.send_message(message.channel, msg)
 
     async def wipe_message(self, message):
@@ -213,13 +211,10 @@ class TTRClient(discord.Client):
         msg = ""
         cmd = message.content.split()  # split by spaces
 
-        # Make sure cmd = 2, [!remove -name-]
-        if len(cmd) is not 2:
-            msg = "**Failed**: Must give 1 argument.\n__Example__: `!remove Runnable`"
-            await self.send_message(message.channel, msg)
-            return
+        name = ' '.join(cmd[1:])
+
         # Check queue for this person
-        index = checkList(self.queue, cmd[1])
+        index = checkList(self.queue, name)
         requestor = "{0.author.mention}".format(message)
         if index is -1:  # returns False if DNE
             msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
@@ -228,19 +223,21 @@ class TTRClient(discord.Client):
         #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
         else:
             del self.queue[index]
-            msg = "**Success**. `" + cmd[1] + "` has been removed from the queue."
+            msg = "**Success**. `" + name + "` has been removed from the queue."
 
         await self.send_message(message.channel, msg)
 
     async def swap_message(self, message):
         msg = ""
-        cmd = message.content.split()
-        if len(cmd) is not 3:
-            msg = "**Failed**: Must give 2 arg. Example: `!swap Runnable Static`"
+        toons = message.content[5:].split('-')
+        if len(toons) < 2:
+            msg = "**Failed**: Must give 2 arg separated by a hyphen. Example: `!swap [Runnable] [-] [Static Void]`"
         elif not self.splits:
             msg = "**Failed**: The queue hasn't been split yet fam."
         else:
-            msg = swapGroups(cmd[1], cmd[2], self.splits, self.fireNums)
+            toon1 = toons[0].strip()
+            toon2 = toons[1].strip()
+            msg = swapGroups(toon1, toon2, self.splits, self.fireNums)
 
         await self.send_message(message.channel, msg)
 
@@ -256,13 +253,13 @@ class TTRClient(discord.Client):
         msg += "Use this to add yourself or anyone else to the CEO queue!\n"
         msg += "```Usage:\t  !add [Name] [Suit Level]\n"
         msg += "Example:\t!add Runnable 50```\n"
-        msg += "__NOTE__: Name must only be one word, and Suit level must be >= 8 and <= 50.\n\n\n"
+        msg += "__NOTE__: Your name can be multiple words, and Suit level must be >= 8 and <= 50.\n\n\n"
 
         # !remove
         msg += "`!remove`\n"
         msg += "Use this to remove someone you added to the queue.\n"
         msg += "```Usage:\t  !queue [Name in queue]\n"
-        msg += "Example:\t!queue Runnable```\n"
+        msg += "Example:\t!queue Static Void```\n"
         # msg += "__NOTE__: To prevent trolling, you can only remove people you personally added to the queue.\n"
         msg += "__NOTE__: If you made a mistake or want to update your entry, use this to remove the old one, and then re-add it.\n\n\n"
 
@@ -279,14 +276,16 @@ class TTRClient(discord.Client):
         msg += "```Usage:\t  !split\n"
         msg += "Example:\t!split```\n"
         msg += "__NOTE__: This command takes no arguments.\n"
-        msg += "__NOTE__: This bot is capable of evenly splitting up to 13 full groups (104 toons) evenly.\n\n\n"
+        msg += "__NOTE__: This bot is capable of evenly splitting an unlimited amount of groups evenly.\n\n\n"
+        msg += "__NOTE__: Calling !split after groups are already split will reset any swaps done.\n"
+
 
         # !swap
         msg += "`!swap`\n"
         msg += "Use this to swap two people between two groups.\n"
-        msg += "```Usage:\t  !swap [Name1] [Name2]\n"
-        msg += "Example:\t!swap Runnable Static```\n"
-        msg += "__NOTE__: To prevent unbalancing groups, for now, you can only swap people around who are the same level.\n\n\n"
+        msg += "```Usage:\t  !swap [Name1] [-] [Name2]\n"
+        msg += "Example:\t!swap Runnable - Static Void```\n"
+        #msg += "__NOTE__: To prevent unbalancing groups, for now, you can only swap people around who are the same level.\n\n\n"
 
         # !wipe
         msg += "`!wipe`\n"

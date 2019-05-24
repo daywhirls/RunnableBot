@@ -46,9 +46,6 @@ def balanceGroups(numGroups, queue, splits, fireNums):
         # form msg string for one group, append it to final msg each time
         tempMsg = "__Group " + str(i + 1) + "__\t**" + str(fireNums[i]) + " Fires**\n"
         for j in splits[i]:
-            # TODO: Swap the level and names around so it looks nice.
-            # TODO: If lvl is 8 or 9, add a 0 in front of it for formatting
-            # tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
             tempMsg += j[0] + "\n"
         msg += tempMsg + "\n\n"
 
@@ -107,17 +104,6 @@ def swapGroups(personOne, personTwo, splits, fireNums):
     personOneLevel = -1
     personTwoLevel = -1
 
-    # confirm both people actually exist in lists
-    # print(str(len(splits)))
-
-    """
-    for group in range(len(splits)):
-        print("Looping thru splits[group]: " + str(splits[group][0]))
-        if splits[group][0] == personOne:
-            personOneLocation = group
-        elif splits[group][0] == personTwo:
-            personTwoLocation = group
-    """
     # loop through every split group checking for both names given
     for i in range(len(splits)):
         for j in splits[i]:
@@ -135,9 +121,10 @@ def swapGroups(personOne, personTwo, splits, fireNums):
     elif personOneLocation == personTwoLocation:
         msg = "Uh.. These people are in the same group already fam. Wyd????"
 
+    # UPDATE: Decided to (temporarily?) remove this check. High enough suits.
     # only let people swap identical lvls to prevent unfair splits
-    elif personOneLevel is not personTwoLevel:
-        msg = "**Failed**. If this swap happens, one group will have lower fires than desired. You can only swap people that are the same level for now!"
+    #elif personOneLevel is not personTwoLevel:
+    #    msg = "**Failed**. If this swap happens, one group will have lower fires than desired. You can only swap people that are the same level for now!"
 
     else:  # we gucci fam. Let's swap them bois
         count = 0
@@ -168,9 +155,6 @@ def swapGroups(personOne, personTwo, splits, fireNums):
                 "__Group " + str(i + 1) + "__\t**" + str(fireNums[i]) + " Fires**\n"
             )
             for j in splits[i]:
-                # TODO: Swap the level and names around so it looks nice.
-                # TODO: If lvl is 8 or 9, add a 0 in front of it for formatting
-                # tempMsg += j[0] + "\t\t\t[BC " + str(j[1]) + "]\n"
                 tempMsg += j[0] + "\n"
             msg += tempMsg + "\n"
 
