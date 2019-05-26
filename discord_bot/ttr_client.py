@@ -14,8 +14,10 @@ from group_helpers import (
 from ttr_helpers import verifyRole
 
 from mongo_helpers import (
+    printQueue,
     addToQueue,
-    toonExists
+    toonExistsInDB,
+    wipeDB
 )
 
 # TTRClient eats the arg it requires (token), then passes the rest
@@ -165,8 +167,7 @@ class TTRClient(discord.Client):
         elif int(cmd[(len(cmd) - 1)]) < 8 or int(cmd[(len(cmd) - 1)]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
 
-        elif toonExists(self._db, toonName):
-            print("toonExists False")
+        elif toonExistsInDB(self._db, toonName):
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
 
         else:  # we gucci fam
@@ -218,7 +219,8 @@ class TTRClient(discord.Client):
         if verifyRole(
             "{0.author.top_role}".format(message)
         ):  # User has permission to wipe queue
-            self.wipeQueue()
+            self.wipeQueue() # TODO: Phase out local copy of queue, splits
+            wipeDB(self._db)
             msg = "Emptied queue!"
         else:
             msg = "**Failed**: You do not have permission to wipe the queue."
