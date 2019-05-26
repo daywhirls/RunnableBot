@@ -13,10 +13,17 @@ from group_helpers import (
 )
 from ttr_helpers import verifyRole
 
+from mongo_helpers import (
+    addToQueue,
+    toonExists
+)
 
+# TTRClient eats the arg it requires (token), then passes the rest
+# onto discord.Client's __init__ (*args, **kwargs). in my case nothing
 class TTRClient(discord.Client):
-    def __init__(self, token, *args, **kwargs):
+    def __init__(self, token, db, *args, **kwargs):
         self._token = token
+        self._db = db
         self._logger = logging.getLogger(__name__)
         self.queue = []
         self.splits = []
@@ -33,6 +40,7 @@ class TTRClient(discord.Client):
             "!help": self.help_message,
         }
 
+    # calls discord.Client's run() function using _token
     def run(self, *args, **kwargs):
         super(TTRClient, self).run(self._token)
 
@@ -47,8 +55,10 @@ class TTRClient(discord.Client):
     def wipeSplits(self):
         self.splits.clear()
         self.fireNums.clear()
+
     def wipeQueue(self):
         self.queue.clear()
+
     async def get_logs_from(self, channel):
         poll = []
         async for msg in self.logs_from(channel, limit=4):
@@ -142,23 +152,31 @@ class TTRClient(discord.Client):
         if message_fn is not None:
             await message_fn(message)
 
+    # iterate through JSON mongoDB data and ensure entry DNE
+    # package entry into JSON and send to DB
     async def add_message(self, message):
         cmd = message.content.split()  # split by spaces
         msg = ""
-        # make sure the message.content is 3 words: [arg name level]
+        toonName = ' '.join(cmd[1:-1])
+
         if not cmd[len(cmd) - 1].isdigit() or len(cmd) < 3:
             msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Static Void 50`"
 
         elif int(cmd[(len(cmd) - 1)]) < 8 or int(cmd[(len(cmd) - 1)]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
-        elif checkList(self.queue, cmd[1]) is not -1:
+
+        elif toonExists(self._db, toonName):
+            print("toonExists False")
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
+
         else:  # we gucci fam
-            toonName = ' '.join(cmd[1:-1])
             self.queue.append(
-                #(str(cmd[1]), int(cmd[2]), "{0.author.mention}".format(message))
                 (str(toonName), int(cmd[len(cmd) - 1]), "{0.author.mention}".format(message))
             )
+            entry = {}
+            entry['_id'] = toonName
+            entry['level'] = int(cmd[len(cmd) - 1])
+            addToQueue(self._db, entry)
             msg = (
                 "{0.author.mention}".format(message)
                 + " added `"
