@@ -1,5 +1,6 @@
 from math import ceil
 from copy import copy
+from re import compile
 
 from ttr_helpers import calculateFires, convertSuitValue, getCountFires
 
@@ -89,14 +90,36 @@ def calculateWeeklySchedule(results):
     for reaction in weekendTime.reactions:
         weekendTimeVotes.append(reaction.count)
 
-    msg = ":alert: This week's CEO Schedule: :alert: \n\n"
+    msg = "This week's CEO Schedule:\n```"
     msg += weekdays[weekdayVotes.index(max(weekdayVotes))] + " at "
-    msg += weektimes[weekTimeVotes.index(max(weekTimeVotes))] + " PM EST.\n"
+    msg += weektimes[weekTimeVotes.index(max(weekTimeVotes))] + ":00 PM EST\n"
     msg += weekends[weekendVotes.index(max(weekendVotes))] + " at "
-    msg += weekendtimes[weekendTimeVotes.index(max(weekendTimeVotes))] + " PM EST.\n"
+    msg += weekendtimes[weekendTimeVotes.index(max(weekendTimeVotes))] + ":00 PM EST```"
 
     return msg
 
+"""
+Checks the poll results message in the server and returns a better-formatted version
+"""
+def getRunTimes(results):
+    # I only care about what's in between ``1
+    delimiter = compile('```[^```]*```')
+    times = ''.join(delimiter.findall(results)).strip('```').split('\n')
+
+    runTimes = []
+    for run in times:
+        args = run.split(' ')
+
+        # Get the hour and zero-pad if necessary.
+        # pingServerForRun uses ("%A %I") strftime format (ex: Friday 09)
+        day = args[0]
+        hour = args[2].split(':')[0]
+        if int(hour) < 10:
+            hour = "0" + hour
+
+        runTimes.append((day + " " + hour))
+
+    return runTimes
 
 def swapGroups(personOne, personTwo, splits, fireNums):
     personOneLocation = -1

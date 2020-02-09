@@ -8,13 +8,17 @@ from group_helpers import (
     balanceGroups,
     howManyGroups,
     calculateWeeklySchedule,
+    getRunTimes,
     checkList,
     swapGroups,
 )
 from ttr_helpers import verifyRole
 
-
+OFFICIAL_SCHEDULE_CHANNEL = '553493689880543242' # Cheese server's #weekly-schedule
+OFFICIAL_ANNOUNCEMENTS_CHANNEL = '481295173113085973' # Cheese server's #announcements
+TEST_CHANNEL = '553420403033505792' # Local test server's #run-queue
 class TTRClient(discord.Client):
+
     def __init__(self, token, *args, **kwargs):
         self._token = token
         self._logger = logging.getLogger(__name__)
@@ -23,6 +27,7 @@ class TTRClient(discord.Client):
         self.fireNums = []
         super(TTRClient, self).__init__(*args, **kwargs)
         self.loop.create_task(self.schedulePoll())
+        self.loop.create_task(self.pingServerForRun())
         self.function_map = {
             "!add": self.add_message,
             "!queue": self.queue_message,
@@ -47,22 +52,23 @@ class TTRClient(discord.Client):
     def wipeSplits(self):
         self.splits.clear()
         self.fireNums.clear()
+
     def wipeQueue(self):
         self.queue.clear()
-    async def get_logs_from(self, channel):
+
+    async def get_logs_from(self, channel, numMsgs=4):
         poll = []
-        async for msg in self.logs_from(channel, limit=4):
+        async for msg in self.logs_from(channel, limit=numMsgs):
             poll.append(msg)
         return poll
 
-    # test channel = '553420403033505792'
-    # official channel = '553493689880543242'
     async def schedulePoll(self):
         await self.wait_until_ready()
-        message_channel = self.get_channel("553493689880543242")  # not used yet swag
+        message_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         while not self.is_closed:
             now = datetime.today().strftime("%a %H:%M")
             if now == "Sun 02:00":
+                print("It's time to post this week's poll!")
                 time = 82800  # sleep 23 hours and then check every minute
 
                 today = datetime.today().strftime("%B %d, %Y")
@@ -77,7 +83,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧", "🇨", "🇩"]
 
                 weekday = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    message_channel, msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekday, choice)
@@ -85,14 +91,10 @@ class TTRClient(discord.Client):
                 msg = "`What Week Day Time? (P.M. EST)`"
                 reactions = ["6⃣", "7⃣", "8⃣", "9⃣"]
                 weekdayTime = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    message_channel, msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekdayTime, choice)
-
-                # send something in between these so it's not so jumbled together
-                # msg = "**-~-~-~-~-~-~-~-~-~-**\n**-~-~-~-~-~-~-~-~-~-**"
-                # await client.send_message(client.get_channel('553420403033505792'), msg)
 
                 msg = "**Choose __Weekend__ Schedule**:\n"
                 msg += "🇦  Friday\n"
@@ -101,7 +103,7 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧"]
 
                 weekend = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    message_channel, msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekend, choice)
@@ -109,27 +111,65 @@ class TTRClient(discord.Client):
                 msg = "`What Weekend Time? (P.M. EST)`"
                 reactions = ["2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"]
                 weekendTime = await self.send_message(
-                    self.get_channel("553493689880543242"), msg
+                    message_channel, msg
                 )
                 for choice in reactions:
                     await self.add_reaction(weekendTime, choice)
 
             elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
+                print("It's time to post this week's schedule!")
                 results = await self.get_logs_from(
-                    self.get_channel("553493689880543242")
+                    message_channel
                 )
                 announcement = calculateWeeklySchedule(results)
                 await self.send_message(
-                    self.get_channel("553493689880543242"), announcement
+                    message_channel, announcement
                 )
                 time = 60  # check every minute
 
             else:
-                print("Not time yet..")
+                print("Not time for Poll or Results yet..")
                 time = 60  # check every minute
 
             await asyncio.sleep(time)
+
+    """
+    Checks every hour to see if the next hour is a CEO run!
+    If so, ping #announcements saying the  run is in an hour.
+    """
+    async def pingServerForRun(self):
+        # TODO: Make sure not to check if the last message is
+        # the poll, NOT results.
+        await self.wait_until_ready()
+        schedule_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
+        announcements_channel = self.get_channel(OFFICIAL_ANNOUNCEMENTS_CHANNEL)
+        while not self.is_closed:
+            runTimes = await self.get_logs_from(
+                schedule_channel,1
+            )
+
+            lastMessage = runTimes[0].content
+            # Don't do anything if we're still voting on the upcoming week's schedule
+            if lastMessage.find("This week's CEO Schedule:") != -1:
+                print("Schedule is posted! Now checking time..")
+
+                times = getRunTimes(lastMessage)
+                now = datetime.today().strftime("%A %I") # Format ex: Friday 09
+
+                if now in times:
+                    print("IT'S CEO TIME. Pinging!")
+                    msg = "CEO in one hour! @here"
+                    # Alert announcements we have a CEO in one hour!
+                    runPing = await self.send_message(
+                        announcements_channel, msg
+                    )
+                else:
+                    print("Not time yet. I'll check again in an hour..")
+            else:
+                print("No schedule for this week yet. I'll check again in an hour..")
+
+            await asyncio.sleep(3600) # Check every hour
 
     async def on_message(self, message):
         # await client.change_presence(game=discord.Game(name="I'm being updated!"))
@@ -156,7 +196,6 @@ class TTRClient(discord.Client):
         else:  # we gucci fam
             toonName = ' '.join(cmd[1:-1])
             self.queue.append(
-                #(str(cmd[1]), int(cmd[2]), "{0.author.mention}".format(message))
                 (str(toonName), int(cmd[len(cmd) - 1]), "{0.author.mention}".format(message))
             )
             msg = (
