@@ -8,7 +8,7 @@ from group_helpers import (
     balanceGroups,
     howManyGroups,
     calculateWeeklySchedule,
-    getRunTimes,
+    getRunAlertTimes,
     checkList,
     swapGroups,
 )
@@ -154,7 +154,7 @@ class TTRClient(discord.Client):
             if lastMessage.find("This week's CEO Schedule:") != -1:
                 print("Schedule is posted! Now checking time..")
 
-                times = getRunTimes(lastMessage)
+                times = getRunAlertTimes(lastMessage)
                 now = datetime.today().strftime("%A %I") # Format ex: Friday 09
 
                 if now in times:

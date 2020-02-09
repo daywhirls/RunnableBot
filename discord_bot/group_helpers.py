@@ -99,9 +99,10 @@ def calculateWeeklySchedule(results):
     return msg
 
 """
-Checks the poll results message in the server and returns a better-formatted version
+Checks the poll results message in the server and returns  better-formatted time strings.
+The times returned are one hour before the run, so RunBot can ping everyone a heads-up.
 """
-def getRunTimes(results):
+def getRunAlertTimes(results):
     # I only care about what's in between ``1
     delimiter = compile('```[^```]*```')
     times = ''.join(delimiter.findall(results)).strip('```').split('\n')
@@ -114,6 +115,7 @@ def getRunTimes(results):
         # pingServerForRun uses ("%A %I") strftime format (ex: Friday 09)
         day = args[0]
         hour = args[2].split(':')[0]
+        hour = str(int(hour) - 1) # We want to alert an hour before the run
         if int(hour) < 10:
             hour = "0" + hour
 
