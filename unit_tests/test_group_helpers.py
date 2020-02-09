@@ -3,7 +3,9 @@ import unittest
 
 from discord_bot.group_helpers import howManyGroups
 
-
+"""
+Sanity test that RunBot can handle any amount of groups of 8
+"""
 def test_how_many_groups():
     for x in range(1, 105):
         queue = [0] * x
