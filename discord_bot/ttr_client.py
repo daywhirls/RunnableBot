@@ -169,7 +169,7 @@ class TTRClient(discord.Client):
             else:
                 print("No schedule for this week yet. I'll check again in an hour..")
 
-            await asyncio.sleep(3600) # Check every hour
+            await asyncio.sleep(60) # Check every minute
 
     async def on_message(self, message):
         # await client.change_presence(game=discord.Game(name="I'm being updated!"))
