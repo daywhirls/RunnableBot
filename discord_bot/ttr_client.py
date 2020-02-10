@@ -165,9 +165,9 @@ class TTRClient(discord.Client):
                         announcements_channel, msg
                     )
                 else:
-                    print("Not time yet. I'll check again in an hour..")
+                    print("Not time to ping yet..")
             else:
-                print("No schedule for this week yet. I'll check again in an hour..")
+                print("No schedule for this week yet..")
 
             await asyncio.sleep(60) # Check every minute
 
