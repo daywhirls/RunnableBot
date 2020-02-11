@@ -165,12 +165,15 @@ class TTRClient(discord.Client):
                     runPing = await self.send_message(
                         announcements_channel, msg
                     )
+                    time = 3600 # Wait an hour so we don't ping every minute this hour
                 else:
                     print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
+                    time = 60
             else:
                 print("No schedule for this week yet..")
+                time = 60
 
-            await asyncio.sleep(60) # Check every minute
+            await asyncio.sleep(time) # Check every minute
 
     async def on_message(self, message):
         # await client.change_presence(game=discord.Game(name="I'm being updated!"))
