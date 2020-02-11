@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from datetime import datetime
+import pytz # Force datetime into EST since my server is UTC
 
 from group_helpers import (
     balanceGroups,
@@ -155,8 +156,8 @@ class TTRClient(discord.Client):
                 print("Schedule is posted! Now checking time..")
 
                 times = getRunAlertTimes(lastMessage)
-                now = datetime.today().strftime("%A %I") # Format ex: Friday 09
-
+                est = pytz.timezone("US/Eastern") # Convert from UTC to EST
+                now = datetime.today().astimezone(est).strftime("%A %I") # Format ex: Friday 09
                 if now in times:
                     print("IT'S CEO TIME. Pinging!")
                     msg = "CEO in one hour! @here"
@@ -165,7 +166,7 @@ class TTRClient(discord.Client):
                         announcements_channel, msg
                     )
                 else:
-                    print("Not time to ping yet..")
+                    print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
             else:
                 print("No schedule for this week yet..")
 
