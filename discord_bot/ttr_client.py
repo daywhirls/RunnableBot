@@ -140,12 +140,13 @@ class TTRClient(discord.Client):
     If so, ping #announcements saying the  run is in an hour.
     """
     async def pingServerForRun(self):
-        # TODO: Make sure not to check if the last message is
-        # the poll, NOT results.
+        print("pingServerForRun")
         await self.wait_until_ready()
+        print("pingServeForRun is ready")
         schedule_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         announcements_channel = self.get_channel(OFFICIAL_ANNOUNCEMENTS_CHANNEL)
         while not self.is_closed:
+            print("pingServerForRun is not self.is_closed")
             runTimes = await self.get_logs_from(
                 schedule_channel,1
             )
