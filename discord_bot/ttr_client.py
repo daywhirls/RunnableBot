@@ -140,13 +140,10 @@ class TTRClient(discord.Client):
     If so, ping #announcements saying the  run is in an hour.
     """
     async def pingServerForRun(self):
-        print("pingServerForRun")
         await self.wait_until_ready()
-        print("pingServeForRun is ready")
         schedule_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         announcements_channel = self.get_channel(OFFICIAL_ANNOUNCEMENTS_CHANNEL)
         while not self.is_closed:
-            print("pingServerForRun is not self.is_closed")
             runTimes = await self.get_logs_from(
                 schedule_channel,1
             )
@@ -169,10 +166,10 @@ class TTRClient(discord.Client):
                     time = 3600 # Wait an hour so we don't ping every minute this hour
                 else:
                     print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
-                    time = 60
+                    time = 300 # Wait 5 minutes to prevent rate limit exception
             else:
                 print("No schedule for this week yet..")
-                time = 60
+                time = 300 # Wait 5 minutes to prevent rate limit exception.
 
             await asyncio.sleep(time) # Check every minute
 
