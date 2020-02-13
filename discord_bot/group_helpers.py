@@ -116,8 +116,9 @@ def getRunAlertTimes(results):
         day = args[0]
         hour = args[2].split(':')[0]
         hour = str(int(hour) - 1) # We want to alert an hour before the run
-        if int(hour) < 10:
-            hour = "0" + hour
+
+        hour = str(int(hour) + 12) # All runs are after noon, so just add on
+        # +12 for easy handling, since the server msg format is only 1-12.
 
         runTimes.append((day + " " + hour))
 

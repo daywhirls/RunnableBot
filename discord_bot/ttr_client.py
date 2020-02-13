@@ -153,9 +153,9 @@ class TTRClient(discord.Client):
             if lastMessage.find("This week's CEO Schedule:") != -1:
                 print("Schedule is posted! Now checking time..")
 
-                times = getRunAlertTimes(lastMessage)
+                times = getRunAlertTimes(lastMessage) # Gets 24hr format
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
-                now = datetime.today().astimezone(est).strftime("%A %I") # Format ex: Friday 09
+                now = datetime.today().astimezone(est).strftime("%A %H") # Format ex: Friday 21 (9PM)
                 if now in times:
                     print("IT'S CEO TIME. Pinging!")
                     msg = "CEO in one hour! @here"
