@@ -36,7 +36,6 @@ class TTRClient(discord.Client):
         self._token = token
         self._db = db
         self._logger = logging.getLogger(__name__)
-        self.queue = []
         self.splits = []
         self.fireNums = []
         super(TTRClient, self).__init__(*args, **kwargs)
@@ -67,9 +66,6 @@ class TTRClient(discord.Client):
     def wipeSplits(self):
         self.splits.clear()
         self.fireNums.clear()
-
-    def wipeQueue(self):
-        self.queue.clear()
 
     async def get_logs_from(self, channel, numMsgs=4):
         poll = []
@@ -171,13 +167,23 @@ class TTRClient(discord.Client):
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
                 now = datetime.today().astimezone(est).strftime("%A %H") # Format ex: Friday 21 (9PM)
                 if now in times:
-                    print("IT'S CEO TIME. Pinging!")
                     msg = "CEO in one hour! @here"
-                    # Alert announcements we have a CEO in one hour!
-                    runPing = await self.send_message(
-                        announcements_channel, msg
-                    )
-                    time = 3600 # Wait an hour so we don't ping every minute this hour
+
+                    """
+                    Verify we haven't already pinged today (in case Heroku resets the bot during the hour
+                    before the run)
+                    """
+                    lastAnnouncement = await self.get_logs_from(announcements_channel,1)
+                    announcement = lastAnnouncement[0].content
+                    if announcement == msg:
+                        print("ALREADY PINGED SERVER. YIKES")
+                    else:
+                        print("IT'S CEO TIME. Pinging!")
+                        # Alert announcements we have a CEO in one hour!
+                        runPing = await self.send_message(
+                            announcements_channel, msg
+                        )
+                        time = 3600 # Wait an hour so we don't ping every minute this hour
                 else:
                     print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
                     time = 300 # Wait 5 minutes to prevent rate limit exception
@@ -215,9 +221,6 @@ class TTRClient(discord.Client):
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
 
         else:  # we gucci fam
-            self.queue.append(
-                (str(toonName), int(cmd[len(cmd) - 1]), "{0.author.mention}".format(message))
-            )
             entry = {}
             entry['_id'] = toonName
             entry['level'] = int(cmd[len(cmd) - 1])
@@ -271,7 +274,6 @@ class TTRClient(discord.Client):
         if verifyRole(
             "{0.author.top_role}".format(message)
         ):  # User has permission to wipe queue
-            self.wipeQueue() # TODO: Phase out local copy of queue, splits
             wipeDB(self._db)
             msg = "Emptied queue!"
         else:
