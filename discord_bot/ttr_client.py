@@ -18,8 +18,11 @@ from ttr_helpers import verifyRole
 from mongo_helpers import (
     printQueue,
     addToQueue,
+    removeFromQueue,
     toonExistsInDB,
-    wipeDB
+    wipeDB,
+    isDatabaseEmpty,
+    getQueueAsList
 )
 
 OFFICIAL_SCHEDULE_CHANNEL = '553493689880543242' # Cheese server's #weekly-schedule
@@ -230,23 +233,28 @@ class TTRClient(discord.Client):
                 + "** and then re-add it.\n\n"
             )
             msg += "Current queue:\n```"
-            for i in self.queue:
-                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
+            queue = getQueueAsList(self._db)
+            # Format list to msg string for printing in discord channel
+            msg = "```"
+            for entry in queue:
+                msg += "[BC " + str(entry['level']) + "]\t" + entry['_id'] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
     async def queue_message(self, message):
-        if not self.queue:
+        if isDatabaseEmpty(self._db):
             msg = "List is empty! use `!add [Name] [8-50]` to add someone!"
         else:
+            queue = getQueueAsList(self._db)
+            # Format list to msg string for printing in discord channel
             msg = "```"
-            for i in self.queue:
-                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
+            for entry in queue:
+                msg += "[BC " + str(entry['level']) + "]\t" + entry['_id'] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
     async def split_message(self, message):
-        if len(self.queue) is 0:
+        if isDatabaseEmpty():
             msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
             await self.send_message(message.channel, msg)
             return
@@ -274,18 +282,18 @@ class TTRClient(discord.Client):
 
         name = ' '.join(cmd[1:])
 
-        # Check queue for this person
-        index = checkList(self.queue, name)
-        requestor = "{0.author.mention}".format(message)
-        if index is -1:  # returns False if DNE
-            msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
+        """ Code to only let the author remove their user """
+        #requestor = "{0.author.mention}".format(message)
         # Verify the person removing the entry actually added it in the first place
         # elif queue[index][2] != requestor:
         #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
-        else:
-            del self.queue[index]
-            msg = "**Success**. `" + name + "` has been removed from the queue."
 
+        # Check collection to verify the entry exists before trying to remove
+        if not toonExistsInDB(self._db, name):
+            msg = "This person does not exist.\nTry again or type **!queue** to view the queue."
+        else:
+            removeFromQueue(self._db, name)
+            msg = "**Success**. `" + name + "` has been removed from the queue."
         await self.send_message(message.channel, msg)
 
     async def swap_message(self, message):

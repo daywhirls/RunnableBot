@@ -20,8 +20,20 @@ def addToQueue(db, entry):
         return -1
 
 
+def removeFromQueue(db, entry):
+    db['queue'].delete_one({'_id': entry})
+
+
 def toonExistsInDB(db, entry):
     return True if db['queue'].find_one({"_id": entry}) is not None else False
+
+
+def isDatabaseEmpty(db):
+    return db['queue'].count() == 0
+
+
+def getQueueAsList(db):
+    return list(db['queue'].find({}))
 
 
 def wipeDB(db):
