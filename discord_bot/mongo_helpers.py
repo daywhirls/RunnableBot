@@ -33,8 +33,14 @@ def isDatabaseEmpty(db):
 
 
 def getQueueAsList(db):
-    return list(db['queue'].find({}))
-
+    doc = list(db['queue'].find({})) # returns list of dictionaries
+    queue = []
+    for entry in doc:
+        queue.append((
+            entry['_id'],
+            entry['level'],
+            entry['sender']))
+    return queue
 
 def wipeDB(db):
     db['queue'].drop()

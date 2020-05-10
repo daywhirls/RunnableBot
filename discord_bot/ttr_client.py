@@ -221,8 +221,9 @@ class TTRClient(discord.Client):
             entry = {}
             entry['_id'] = toonName
             entry['level'] = int(cmd[len(cmd) - 1])
+            entry['sender'] = "{0.author.mention}".format(message)
             addToQueue(self._db, entry)
-            msg = (
+            msg += (
                 "{0.author.mention}".format(message)
                 + " added `"
                 + str(toonName)
@@ -235,9 +236,8 @@ class TTRClient(discord.Client):
             msg += "Current queue:\n```"
             queue = getQueueAsList(self._db)
             # Format list to msg string for printing in discord channel
-            msg = "```"
             for entry in queue:
-                msg += "[BC " + str(entry['level']) + "]\t" + entry['_id'] + "\n"
+                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
@@ -249,18 +249,21 @@ class TTRClient(discord.Client):
             # Format list to msg string for printing in discord channel
             msg = "```"
             for entry in queue:
-                msg += "[BC " + str(entry['level']) + "]\t" + entry['_id'] + "\n"
+                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
     async def split_message(self, message):
-        if isDatabaseEmpty():
+        if isDatabaseEmpty(self._db):
             msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
             await self.send_message(message.channel, msg)
             return
-        numGroups = howManyGroups(self.queue)
+
+        queue = getQueueAsList(self._db)
+
+        numGroups = howManyGroups(queue)
         self.wipeSplits()
-        msg = balanceGroups(numGroups, self.queue, self.splits, self.fireNums)
+        msg = balanceGroups(numGroups, queue, self.splits, self.fireNums)
         await self.send_message(message.channel, msg)
 
     async def wipe_message(self, message):
