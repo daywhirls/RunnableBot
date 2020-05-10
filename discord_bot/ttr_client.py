@@ -15,15 +15,27 @@ from group_helpers import (
 )
 from ttr_helpers import verifyRole
 
+from mongo_helpers import (
+    printQueue,
+    addToQueue,
+    removeFromQueue,
+    toonExistsInDB,
+    wipeDB,
+    isDatabaseEmpty,
+    getQueueAsList
+)
+
 OFFICIAL_SCHEDULE_CHANNEL = '553493689880543242' # Cheese server's #weekly-schedule
 OFFICIAL_ANNOUNCEMENTS_CHANNEL = '481295173113085973' # Cheese server's #announcements
 TEST_CHANNEL = '553420403033505792' # Local test server's #run-queue
-class TTRClient(discord.Client):
 
-    def __init__(self, token, *args, **kwargs):
+# TTRClient eats the arg it requires (token), then passes the rest
+# onto discord.Client's __init__ (*args, **kwargs). in my case nothing
+class TTRClient(discord.Client):
+    def __init__(self, token, db, *args, **kwargs):
         self._token = token
+        self._db = db
         self._logger = logging.getLogger(__name__)
-        self.queue = []
         self.splits = []
         self.fireNums = []
         super(TTRClient, self).__init__(*args, **kwargs)
@@ -39,6 +51,7 @@ class TTRClient(discord.Client):
             "!help": self.help_message,
         }
 
+    # calls discord.Client's run() function using _token
     def run(self, *args, **kwargs):
         super(TTRClient, self).run(self._token)
 
@@ -53,9 +66,6 @@ class TTRClient(discord.Client):
     def wipeSplits(self):
         self.splits.clear()
         self.fireNums.clear()
-
-    def wipeQueue(self):
-        self.queue.clear()
 
     async def get_logs_from(self, channel, numMsgs=4):
         poll = []
@@ -157,13 +167,23 @@ class TTRClient(discord.Client):
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
                 now = datetime.today().astimezone(est).strftime("%A %H") # Format ex: Friday 21 (9PM)
                 if now in times:
-                    print("IT'S CEO TIME. Pinging!")
                     msg = "CEO in one hour! @here"
-                    # Alert announcements we have a CEO in one hour!
-                    runPing = await self.send_message(
-                        announcements_channel, msg
-                    )
-                    time = 3600 # Wait an hour so we don't ping every minute this hour
+
+                    """
+                    Verify we haven't already pinged today (in case Heroku resets the bot during the hour
+                    before the run)
+                    """
+                    lastAnnouncement = await self.get_logs_from(announcements_channel,1)
+                    announcement = lastAnnouncement[0].content
+                    if announcement == msg:
+                        print("ALREADY PINGED SERVER. YIKES")
+                    else:
+                        print("IT'S CEO TIME. Pinging!")
+                        # Alert announcements we have a CEO in one hour!
+                        runPing = await self.send_message(
+                            announcements_channel, msg
+                        )
+                        time = 3600 # Wait an hour so we don't ping every minute this hour
                 else:
                     print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
                     time = 300 # Wait 5 minutes to prevent rate limit exception
@@ -184,23 +204,29 @@ class TTRClient(discord.Client):
         if message_fn is not None:
             await message_fn(message)
 
+    # iterate through JSON mongoDB data and ensure entry DNE
+    # package entry into JSON and send to DB
     async def add_message(self, message):
         cmd = message.content.split()  # split by spaces
         msg = ""
-        # make sure the message.content is 3 words: [arg name level]
+        toonName = ' '.join(cmd[1:-1])
+
         if not cmd[len(cmd) - 1].isdigit() or len(cmd) < 3:
             msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Static Void 50`"
 
         elif int(cmd[(len(cmd) - 1)]) < 8 or int(cmd[(len(cmd) - 1)]) > 50:
             msg = "**Failed**: Your suit level must be between 8 and 50. Get rekt."
-        elif checkList(self.queue, cmd[1]) is not -1:
+
+        elif toonExistsInDB(self._db, toonName):
             msg = "**Failed**: This person already exists in the queue.\nIf you added them, you can update the entry by using !remove and re-adding them."
+
         else:  # we gucci fam
-            toonName = ' '.join(cmd[1:-1])
-            self.queue.append(
-                (str(toonName), int(cmd[len(cmd) - 1]), "{0.author.mention}".format(message))
-            )
-            msg = (
+            entry = {}
+            entry['_id'] = toonName
+            entry['level'] = int(cmd[len(cmd) - 1])
+            entry['sender'] = "{0.author.mention}".format(message)
+            addToQueue(self._db, entry)
+            msg += (
                 "{0.author.mention}".format(message)
                 + " added `"
                 + str(toonName)
@@ -211,29 +237,36 @@ class TTRClient(discord.Client):
                 + "** and then re-add it.\n\n"
             )
             msg += "Current queue:\n```"
-            for i in self.queue:
-                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
+            queue = getQueueAsList(self._db)
+            # Format list to msg string for printing in discord channel
+            for entry in queue:
+                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
     async def queue_message(self, message):
-        if not self.queue:
+        if isDatabaseEmpty(self._db):
             msg = "List is empty! use `!add [Name] [8-50]` to add someone!"
         else:
+            queue = getQueueAsList(self._db)
+            # Format list to msg string for printing in discord channel
             msg = "```"
-            for i in self.queue:
-                msg += "[BC " + str(i[1]) + "]\t" + i[0] + "\n"
+            for entry in queue:
+                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
     async def split_message(self, message):
-        if len(self.queue) is 0:
+        if isDatabaseEmpty(self._db):
             msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
             await self.send_message(message.channel, msg)
             return
-        numGroups = howManyGroups(self.queue)
+
+        queue = getQueueAsList(self._db)
+
+        numGroups = howManyGroups(queue)
         self.wipeSplits()
-        msg = balanceGroups(numGroups, self.queue, self.splits, self.fireNums)
+        msg = balanceGroups(numGroups, queue, self.splits, self.fireNums)
         await self.send_message(message.channel, msg)
 
     async def wipe_message(self, message):
@@ -241,7 +274,7 @@ class TTRClient(discord.Client):
         if verifyRole(
             "{0.author.top_role}".format(message)
         ):  # User has permission to wipe queue
-            self.wipeQueue()
+            wipeDB(self._db)
             msg = "Emptied queue!"
         else:
             msg = "**Failed**: You do not have permission to wipe the queue."
@@ -254,18 +287,18 @@ class TTRClient(discord.Client):
 
         name = ' '.join(cmd[1:])
 
-        # Check queue for this person
-        index = checkList(self.queue, name)
-        requestor = "{0.author.mention}".format(message)
-        if index is -1:  # returns False if DNE
-            msg = "This person does not exist fam.\nTry again or type **!queue** to view the queue."
+        """ Code to only let the author remove their user """
+        #requestor = "{0.author.mention}".format(message)
         # Verify the person removing the entry actually added it in the first place
         # elif queue[index][2] != requestor:
         #    msg = "**Failed**: You cannot remove someone that you didn't add to the queue.\n```Get rekt.```"
-        else:
-            del self.queue[index]
-            msg = "**Success**. `" + name + "` has been removed from the queue."
 
+        # Check collection to verify the entry exists before trying to remove
+        if not toonExistsInDB(self._db, name):
+            msg = "This person does not exist.\nTry again or type **!queue** to view the queue."
+        else:
+            removeFromQueue(self._db, name)
+            msg = "**Success**. `" + name + "` has been removed from the queue."
         await self.send_message(message.channel, msg)
 
     async def swap_message(self, message):

@@ -1,2 +1,0 @@
-QUEUE = []
-SPLITS = [] 
