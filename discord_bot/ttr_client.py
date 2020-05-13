@@ -10,7 +10,6 @@ from group_helpers import (
     howManyGroups,
     calculateWeeklySchedule,
     getRunAlertTimes,
-    checkList,
     swapGroups,
 )
 from ttr_helpers import verifyRole
@@ -208,7 +207,7 @@ class TTRClient(discord.Client):
     async def add_message(self, message):
         cmd = message.content.split()  # split by spaces
         msg = ""
-        toonName = ' '.join(cmd[1:-1])
+        toonName = ' '.join(cmd[1:-1]).upper()
 
         if not cmd[len(cmd) - 1].isdigit() or len(cmd) < 3:
             msg = "**Failed**: Idk what you mean fam. Type `!add [Name] [Suit Level]`.\n__Example__:  `!add Static Void 50`"
@@ -287,7 +286,7 @@ class TTRClient(discord.Client):
         msg = ""
         cmd = message.content.split()  # split by spaces
 
-        name = ' '.join(cmd[1:])
+        name = ' '.join(cmd[1:]).upper()
 
         """ Code to only let the author remove their user """
         #requestor = "{0.author.mention}".format(message)
@@ -302,13 +301,16 @@ class TTRClient(discord.Client):
             removeFromQueue(self._db, name)
             msg = "**Success**. `" + name + "` has been removed from the queue.\n\n"
 
-            msg += "Current queue:\n```"
-            queue = getQueueAsList(self._db)
-            # Format list to msg string for printing in discord channel
-            for entry in queue:
-                level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
-                msg += "[BC " + level + "]\t" + entry[0] + "\n"
-            msg += "```"
+            if isDatabaseEmpty(self._db):
+                msg += "List is now empty! use `!add [Name] [8-50]` to add someone!"
+            else:
+                msg += "Current queue:\n```"
+                queue = getQueueAsList(self._db)
+                # Format list to msg string for printing in discord channel
+                for entry in queue:
+                    level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
+                    msg += "[BC " + level + "]\t" + entry[0] + "\n"
+                msg += "```"
 
         await self.send_message(message.channel, msg)
 
@@ -320,8 +322,8 @@ class TTRClient(discord.Client):
         elif not self.splits:
             msg = "**Failed**: The queue hasn't been split yet fam."
         else:
-            toon1 = toons[0].strip()
-            toon2 = toons[1].strip()
+            toon1 = toons[0].strip().upper()
+            toon2 = toons[1].strip().upper()
             msg = swapGroups(toon1, toon2, self.splits, self.fireNums)
 
         await self.send_message(message.channel, msg)
