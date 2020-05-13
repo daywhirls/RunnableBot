@@ -2,3 +2,5 @@
 .env
 creds.py
 .DS_Store
+Pipfile*
+.idea

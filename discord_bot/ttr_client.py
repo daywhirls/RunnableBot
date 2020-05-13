@@ -16,7 +16,6 @@ from group_helpers import (
 from ttr_helpers import verifyRole
 
 from mongo_helpers import (
-    printQueue,
     addToQueue,
     removeFromQueue,
     toonExistsInDB,
@@ -223,24 +222,26 @@ class TTRClient(discord.Client):
         else:  # we gucci fam
             entry = {}
             entry['_id'] = toonName
-            entry['level'] = int(cmd[len(cmd) - 1])
+            entry['level'] = level = int(cmd[len(cmd) - 1])
             entry['sender'] = "{0.author.mention}".format(message)
             addToQueue(self._db, entry)
+
             msg += (
                 "{0.author.mention}".format(message)
                 + " added `"
                 + str(toonName)
                 + " [BC "
-                + str(cmd[2])
+                + str(level)
                 + "]` to the queue.\nTo edit the entry, type **!remove "
-                + str(cmd[1])
+                + str(toonName)
                 + "** and then re-add it.\n\n"
             )
             msg += "Current queue:\n```"
             queue = getQueueAsList(self._db)
             # Format list to msg string for printing in discord channel
             for entry in queue:
-                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
+                level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
+                msg += "[BC " + level + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
@@ -252,7 +253,8 @@ class TTRClient(discord.Client):
             # Format list to msg string for printing in discord channel
             msg = "```"
             for entry in queue:
-                msg += "[BC " + str(entry[1]) + "]\t" + entry[0] + "\n"
+                level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
+                msg += "[BC " + level + "]\t" + entry[0] + "\n"
             msg += "```"
         await self.send_message(message.channel, msg)
 
@@ -298,7 +300,16 @@ class TTRClient(discord.Client):
             msg = "This person does not exist.\nTry again or type **!queue** to view the queue."
         else:
             removeFromQueue(self._db, name)
-            msg = "**Success**. `" + name + "` has been removed from the queue."
+            msg = "**Success**. `" + name + "` has been removed from the queue.\n\n"
+
+            msg += "Current queue:\n```"
+            queue = getQueueAsList(self._db)
+            # Format list to msg string for printing in discord channel
+            for entry in queue:
+                level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
+                msg += "[BC " + level + "]\t" + entry[0] + "\n"
+            msg += "```"
+
         await self.send_message(message.channel, msg)
 
     async def swap_message(self, message):
