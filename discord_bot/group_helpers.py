@@ -53,13 +53,6 @@ def balanceGroups(numGroups, queue, splits, fireNums):
     return msg
 
 
-def checkList(queue, name):
-    for i in range(len(queue)):
-        if queue[i][0].lower() == name.lower():
-            return i
-    return -1
-
-
 def calculateWeeklySchedule(results):
     # using these to easily format final message by index of emoji reaction
     weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday"]
