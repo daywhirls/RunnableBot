@@ -1,15 +1,6 @@
 from bson.json_util import dumps
 import pymongo
 
-# TODO: refactor this so I don't have to pass mongoClient[dbName] to every
-# function
-
-
-# TODO: grabs every document from collection in JSON/dict format,
-#       returns msg formatted nicely to display on Discord
-def printQueue():
-    pass
-
 
 # appends one entry to mongoDB queue
 def addToQueue(db, entry):
