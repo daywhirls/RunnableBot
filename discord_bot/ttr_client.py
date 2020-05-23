@@ -173,7 +173,10 @@ class TTRClient(discord.Client):
                     """
                     lastAnnouncement = await self.get_logs_from(announcements_channel,1)
                     announcement = lastAnnouncement[0].content
-                    if announcement == msg:
+                    # We only care if the last ping in announcements was actually today
+                    lastPingDate = lastAnnouncement[0].timestamp.astimezone(est).strftime("%B %d %Y")
+                    today = datetime.today().astimezone(est).strftime("%B %d %Y")  # Format: May 23 2020
+                    if announcement == msg and lastPingDate == today:
                         print("ALREADY PINGED SERVER. YIKES")
                     else:
                         print("IT'S CEO TIME. Pinging!")
