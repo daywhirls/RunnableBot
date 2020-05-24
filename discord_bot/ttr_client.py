@@ -77,7 +77,7 @@ class TTRClient(discord.Client):
         while not self.is_closed:
             now = datetime.today().strftime("%a %H:%M")
             if now == "Sun 02:00":
-                print("It's time to post this week's poll!")
+                self._logger.info("It's time to post this week's poll!")
                 time = 82800  # sleep 23 hours and then check every minute
 
                 today = datetime.today().strftime("%B %d, %Y")
@@ -127,7 +127,7 @@ class TTRClient(discord.Client):
 
             elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
-                print("It's time to post this week's schedule!")
+                self._logger.info("It's time to post this week's schedule!")
                 results = await self.get_logs_from(
                     message_channel
                 )
@@ -138,7 +138,7 @@ class TTRClient(discord.Client):
                 time = 60  # check every minute
 
             else:
-                print("Not time for Poll or Results yet..")
+                self._logger.info("Not time for Poll or Results yet..")
                 time = 60  # check every minute
 
             await asyncio.sleep(time)
@@ -159,7 +159,7 @@ class TTRClient(discord.Client):
             lastMessage = runTimes[0].content
             # Don't do anything if we're still voting on the upcoming week's schedule
             if lastMessage.find("This week's CEO Schedule:") != -1:
-                print("Schedule is posted! Now checking time..")
+                self._logger.info("Schedule is posted! Now checking time..")
 
                 times = getRunAlertTimes(lastMessage) # Gets 24hr format
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
@@ -177,19 +177,19 @@ class TTRClient(discord.Client):
                     lastPingDate = lastAnnouncement[0].timestamp.astimezone(est).strftime("%B %d %Y")
                     today = datetime.today().astimezone(est).strftime("%B %d %Y")  # Format: May 23 2020
                     if announcement == msg and lastPingDate == today:
-                        print("ALREADY PINGED SERVER. YIKES")
+                        self._logger.error("ALREADY PINGED SERVER. YIKES")
                     else:
-                        print("IT'S CEO TIME. Pinging!")
+                        self._logger.info("IT'S CEO TIME. Pinging!")
                         # Alert announcements we have a CEO in one hour!
                         runPing = await self.send_message(
                             announcements_channel, msg
                         )
                         time = 3600 # Wait an hour so we don't ping every minute this hour
                 else:
-                    print("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
+                    self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
                     time = 300 # Wait 5 minutes to prevent rate limit exception
             else:
-                print("No schedule for this week yet..")
+                self._logger.info("No schedule for this week yet..")
                 time = 300 # Wait 5 minutes to prevent rate limit exception.
 
             await asyncio.sleep(time) # Check every minute
