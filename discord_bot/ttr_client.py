@@ -23,9 +23,9 @@ from mongo_helpers import (
     getQueueAsList
 )
 
-OFFICIAL_SCHEDULE_CHANNEL = '553493689880543242' # Cheese server's #weekly-schedule
-OFFICIAL_ANNOUNCEMENTS_CHANNEL = '481295173113085973' # Cheese server's #announcements
-TEST_CHANNEL = '553420403033505792' # Local test server's #run-queue
+OFFICIAL_SCHEDULE_CHANNEL = 553493689880543242 # Cheese server's #weekly-schedule
+OFFICIAL_ANNOUNCEMENTS_CHANNEL = 481295173113085973 # Cheese server's #announcements
+TEST_CHANNEL = 553420403033505792 # Local test server's #run-queue
 
 # TTRClient eats the arg it requires (token), then passes the rest
 # onto discord.Client's __init__ (*args, **kwargs). in my case nothing
@@ -65,16 +65,10 @@ class TTRClient(discord.Client):
         self.splits.clear()
         self.fireNums.clear()
 
-    async def get_logs_from(self, channel, numMsgs=4):
-        poll = []
-        async for msg in self.logs_from(channel, limit=numMsgs):
-            poll.append(msg)
-        return poll
-
     async def schedulePoll(self):
         await self.wait_until_ready()
         message_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
-        while not self.is_closed:
+        while not self.is_closed():
             now = datetime.today().strftime("%a %H:%M")
             if now == "Sun 02:00":
                 self._logger.info("It's time to post this week's poll!")
@@ -91,19 +85,16 @@ class TTRClient(discord.Client):
 
                 reactions = ["🇦", "🇧", "🇨", "🇩"]
 
-                weekday = await self.send_message(
-                    message_channel, msg
-                )
+                weekday = await message_channel.send(msg)
+
                 for choice in reactions:
-                    await self.add_reaction(weekday, choice)
+                    await weekday.add_reaction(choice)
 
                 msg = "`What Week Day Time? (P.M. EST)`"
                 reactions = ["6⃣", "7⃣", "8⃣", "9⃣"]
-                weekdayTime = await self.send_message(
-                    message_channel, msg
-                )
+                weekdayTime = await message_channel.send(msg)
                 for choice in reactions:
-                    await self.add_reaction(weekdayTime, choice)
+                    await weekdayTime.add_reaction(choice)
 
                 msg = "**Choose __Weekend__ Schedule**:\n"
                 msg += "🇦  Friday\n"
@@ -111,30 +102,22 @@ class TTRClient(discord.Client):
 
                 reactions = ["🇦", "🇧"]
 
-                weekend = await self.send_message(
-                    message_channel, msg
-                )
+                weekend = await message_channel.send(msg)
                 for choice in reactions:
-                    await self.add_reaction(weekend, choice)
+                    await weekend.add_reaction(choice)
 
                 msg = "`What Weekend Time? (P.M. EST)`"
                 reactions = ["2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"]
-                weekendTime = await self.send_message(
-                    message_channel, msg
-                )
+                weekendTime = await message_channel.send(msg)
                 for choice in reactions:
-                    await self.add_reaction(weekendTime, choice)
+                    await weekendTime.add_reaction(choice)
 
             elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
                 # grab last 4 essages from #weekly-schedule and calculate results
                 self._logger.info("It's time to post this week's schedule!")
-                results = await self.get_logs_from(
-                    message_channel
-                )
+                results = await message_channel.history(limit=4).flatten()
                 announcement = calculateWeeklySchedule(results)
-                await self.send_message(
-                    message_channel, announcement
-                )
+                await message_channel.send(announcement)
                 time = 60  # check every minute
 
             else:
@@ -151,11 +134,8 @@ class TTRClient(discord.Client):
         await self.wait_until_ready()
         schedule_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         announcements_channel = self.get_channel(OFFICIAL_ANNOUNCEMENTS_CHANNEL)
-        while not self.is_closed:
-            runTimes = await self.get_logs_from(
-                schedule_channel,1
-            )
-
+        while not self.is_closed():
+            runTimes = await schedule_channel.history(limit=1).flatten()
             lastMessage = runTimes[0].content
             # Don't do anything if we're still voting on the upcoming week's schedule
             if lastMessage.find("This week's CEO Schedule:") != -1:
@@ -171,20 +151,19 @@ class TTRClient(discord.Client):
                     Verify we haven't already pinged today (in case Heroku resets the bot during the hour
                     before the run)
                     """
-                    lastAnnouncement = await self.get_logs_from(announcements_channel,1)
+                    lastAnnouncement = await announcements_channel.history(limit=1).flatten()
                     announcement = lastAnnouncement[0].content
                     # We only care if the last ping in announcements was actually today
-                    lastPingDate = lastAnnouncement[0].timestamp.astimezone(est).strftime("%B %d %Y")
+                    lastPingDate = lastAnnouncement[0].created_at.astimezone(est).strftime("%B %d %Y")
                     today = datetime.today().astimezone(est).strftime("%B %d %Y")  # Format: May 23 2020
                     if announcement == msg and lastPingDate == today:
                         self._logger.error("ALREADY PINGED SERVER. YIKES")
                     else:
                         self._logger.info("IT'S CEO TIME. Pinging!")
                         # Alert announcements we have a CEO in one hour!
-                        runPing = await self.send_message(
-                            announcements_channel, msg
-                        )
+                        await announcements_channel.send(msg)
                         time = 3600 # Wait an hour so we don't ping every minute this hour
+                        self._logger.info("Timer sleeping to 3600ms")
                 else:
                     self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
                     time = 300 # Wait 5 minutes to prevent rate limit exception
@@ -196,9 +175,9 @@ class TTRClient(discord.Client):
 
     async def on_message(self, message):
         # await client.change_presence(game=discord.Game(name="I'm being updated!"))
-        await self.change_presence(game=discord.Game(name="5 Fire C.E.O."))
+        await self.change_presence(activity=discord.Game(name="5 Fire C.E.O."))
         # we do not want the bot to reply to itself
-        if message.author == self.user or message.server is None:
+        if message.author == self.user or message.guild is None:
             return
         command = message.content.split(" ")[0]
         message_fn = self.function_map.get(command)
@@ -245,7 +224,7 @@ class TTRClient(discord.Client):
                 level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
                 msg += "[BC " + level + "]\t" + entry[0] + "\n"
             msg += "```"
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def queue_message(self, message):
         if isDatabaseEmpty(self._db):
@@ -258,12 +237,12 @@ class TTRClient(discord.Client):
                 level = str(entry[1]) if entry[1] >= 10 else ' ' + str(entry[1])
                 msg += "[BC " + level + "]\t" + entry[0] + "\n"
             msg += "```"
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def split_message(self, message):
         if isDatabaseEmpty(self._db):
             msg = "**Failed**: There's nobody in the queue fam.\n```U cAnT dO tHaT```"
-            await self.send_message(message.channel, msg)
+            await message.channel.send(msg)
             return
 
         queue = getQueueAsList(self._db)
@@ -271,7 +250,7 @@ class TTRClient(discord.Client):
         numGroups = howManyGroups(queue)
         self.wipeSplits()
         msg = balanceGroups(numGroups, queue, self.splits, self.fireNums)
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def wipe_message(self, message):
         msg = ""
@@ -283,7 +262,7 @@ class TTRClient(discord.Client):
         else:
             msg = "**Failed**: You do not have permission to wipe the queue."
 
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def remove_message(self, message):
         msg = ""
@@ -315,7 +294,7 @@ class TTRClient(discord.Client):
                     msg += "[BC " + level + "]\t" + entry[0] + "\n"
                 msg += "```"
 
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def swap_message(self, message):
         msg = ""
@@ -329,7 +308,7 @@ class TTRClient(discord.Client):
             toon2 = toons[1].strip().upper()
             msg = swapGroups(toon1, toon2, self.splits, self.fireNums)
 
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     async def help_message(self, message):
         msg = "**Welcome to RunBot by  <@!285861225491857408>**\n\n"
@@ -367,7 +346,6 @@ class TTRClient(discord.Client):
         msg += "__NOTE__: This bot is capable of evenly splitting an unlimited amount of groups evenly.\n"
         msg += "__NOTE__: Calling !split after groups are already split will reset any swaps done.\n\n\n"
 
-
         # !swap
         msg += "`!swap`\n"
         msg += "Use this to swap two people between two groups.\n"
@@ -384,4 +362,4 @@ class TTRClient(discord.Client):
         msg += "__NOTE__: To prevent trolling, **only** these roles can wipe the queue: "
         msg += "**The Chief Cheese, Cheese Executive Officer, Aged Gouda**"
 
-        await self.send_message(message.channel, msg)
+        await message.channel.send(msg)
