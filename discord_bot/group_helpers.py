@@ -1,7 +1,6 @@
 from math import ceil
 from copy import copy
 from re import compile
-
 from ttr_helpers import calculateFires, convertSuitValue, getCountFires
 
 GROUP_SIZE = 8
@@ -89,7 +88,12 @@ def calculateWeeklySchedule(results):
     msg += weekends[weekendVotes.index(max(weekendVotes))] + " at "
     msg += weekendtimes[weekendTimeVotes.index(max(weekendTimeVotes))] + ":00 PM EST```"
 
-    return msg
+    raw = [weekdays[weekdayVotes.index(max(weekdayVotes))] + ' ' + weektimes[
+        weekTimeVotes.index(max(weekTimeVotes))] + ':00 PM EST',
+           weekends[weekendVotes.index(max(weekendVotes))] + ' ' + weekendtimes[
+               weekendTimeVotes.index(max(weekendTimeVotes))] + ':00 PM EST']
+
+    return msg, raw
 
 """
 Checks the poll results message in the server and returns  better-formatted time strings.
@@ -101,9 +105,10 @@ def getRunAlertTimes(results):
     times = ''.join(delimiter.findall(results)).strip('```').split('\n')
 
     runTimes = []
+    print(times)
     for run in times:
         args = run.split(' ')
-
+        print(args)
         # Get the hour and zero-pad if necessary.
         # pingServerForRun uses ("%A %I") strftime format (ex: Friday 09)
         day = args[0]
