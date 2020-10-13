@@ -172,7 +172,7 @@ class TTRClient(discord.Client):
                         time = 3600 # Wait an hour so we don't ping every minute this hour
                         self._logger.info("Timer sleeping to 3600ms")
                 else:
-                    #self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(runTimes[0]) + " and " + str(runTimes[1]) + ".")
+                    self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(runTimes[0]) + " and " + str(runTimes[1]) + ".")
                     time = 30 # Check every 30 seconds because yolo, rate limiting is not a concern at this point.
             else:
                 self._logger.info("It's Sunday. No schedule for this week yet..")
