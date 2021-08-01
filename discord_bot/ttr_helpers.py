@@ -3,7 +3,7 @@
     wipe the queue
 """
 def verifyRole(role):
-    roles = ["The Chief Cheese", "Cheese Executive Officer", "Aged Gouda"]
+    roles = ["Aged Gouda", "GOAT Cheese", "staff", "Cheese++", "Chief Cheeses"]
     return role in roles
 
 """

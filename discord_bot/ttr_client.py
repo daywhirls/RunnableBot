@@ -76,7 +76,7 @@ class TTRClient(discord.Client):
                 time = 82800  # sleep 23 hours and then check every minute
 
                 today = datetime.today().strftime("%B %d, %Y")
-                msg = "__**Week of " + today + "**__\n\n"
+                msg = "@everyone\n__**Week of " + today + "**__\n\n"
 
                 msg += "**Choose __Weekday__ Schedule**:\n"
                 msg += "🇦  Monday\n"
@@ -151,7 +151,7 @@ class TTRClient(discord.Client):
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
                 now = datetime.today().astimezone(est).strftime("%A %H") # Format ex: Friday 21 (9PM)
                 if now in runTimes:
-                    msg = "CEO in one hour! @here"
+                    msg = "CEO in one hour! @everyone"
 
                     """
                     Verify we haven't already pinged today (in case Heroku resets the bot during the hour

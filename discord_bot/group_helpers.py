@@ -82,7 +82,7 @@ def calculateWeeklySchedule(results):
     for reaction in weekendTime.reactions:
         weekendTimeVotes.append(reaction.count)
 
-    msg = "This week's CEO Schedule:\n```"
+    msg = "@everyone\nThis week's CEO Schedule:\n```"
     msg += weekdays[weekdayVotes.index(max(weekdayVotes))] + " at "
     msg += weektimes[weekTimeVotes.index(max(weekTimeVotes))] + ":00 PM EST\n"
     msg += weekends[weekendVotes.index(max(weekendVotes))] + " at "
