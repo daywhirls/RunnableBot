@@ -1,5 +1,6 @@
 from ttr_client import TTRClient
 from ttr_token import TOKEN
+import certifi
 
 from mongo_tokens import (
     db,
@@ -17,7 +18,7 @@ Grab the Discord auth token, start our logger, and launch the epic RunBot
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.info("Initializing MongoClient")
-    mongoClient = MongoClient(db)
+    mongoClient = MongoClient(db, tlsCAFile=certifi.where())
     mongoDB = mongoClient[dbName] # database
     logger.info("Initializing TTR Bot")
     client = TTRClient(TOKEN, mongoDB) # init _token, calls discord.Client init

@@ -1,4 +1,4 @@
-import discord  # 0.16.12
+import discord
 import asyncio
 import logging
 
@@ -9,7 +9,6 @@ from group_helpers import (
     balanceGroups,
     howManyGroups,
     calculateWeeklySchedule,
-    getRunAlertTimes,
     swapGroups,
 )
 from ttr_helpers import verifyRole
@@ -20,7 +19,9 @@ from mongo_helpers import (
     toonExistsInDB,
     wipeDB,
     isDatabaseEmpty,
-    getQueueAsList
+    getQueueAsList,
+    logWeeklySchedule,
+    getRunTimes
 )
 
 OFFICIAL_SCHEDULE_CHANNEL = 553493689880543242 # Cheese server's #weekly-schedule
@@ -69,13 +70,13 @@ class TTRClient(discord.Client):
         await self.wait_until_ready()
         message_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         while not self.is_closed():
-            now = datetime.today().strftime("%a %H:%M")
-            if now == "Sun 02:00":
+            now = datetime.today().astimezone(pytz.timezone("US/Eastern")).strftime("%A %H")
+            if now == 'Sunday 00':
                 self._logger.info("It's time to post this week's poll!")
                 time = 82800  # sleep 23 hours and then check every minute
 
                 today = datetime.today().strftime("%B %d, %Y")
-                msg = "__**Week of " + today + "**__\n\n"
+                msg = "@everyone\n__**Week of " + today + "**__\n\n"
 
                 msg += "**Choose __Weekday__ Schedule**:\n"
                 msg += "🇦  Monday\n"
@@ -86,7 +87,6 @@ class TTRClient(discord.Client):
                 reactions = ["🇦", "🇧", "🇨", "🇩"]
 
                 weekday = await message_channel.send(msg)
-
                 for choice in reactions:
                     await weekday.add_reaction(choice)
 
@@ -112,12 +112,21 @@ class TTRClient(discord.Client):
                 for choice in reactions:
                     await weekendTime.add_reaction(choice)
 
-            elif now == "Mon 02:00":  # Calculate results and post in #weekly-schedule
-                # grab last 4 essages from #weekly-schedule and calculate results
+            elif now == "Monday 00":  # Calculate results and post in #weekly-schedule
+                # grab last 4 messages from #weekly-schedule and calculate results
                 self._logger.info("It's time to post this week's schedule!")
                 results = await message_channel.history(limit=4).flatten()
-                announcement = calculateWeeklySchedule(results)
+                announcement, raw = calculateWeeklySchedule(results)
                 await message_channel.send(announcement)
+
+                # Record this week's schedule in the database
+                weekdayRun = {'_id': 'weekday', 'time': raw[0]}
+                weekendRun = {'_id': 'weekend', 'time': raw[1]}
+                schedule = [weekdayRun, weekendRun]
+
+                # Store these bad boys in the database to check constantly and avoid Discord rate limiting
+                logWeeklySchedule(self._db, schedule)
+
                 time = 60  # check every minute
 
             else:
@@ -128,24 +137,21 @@ class TTRClient(discord.Client):
 
     """
     Checks every hour to see if the next hour is a CEO run!
-    If so, ping #announcements saying the  run is in an hour.
+    If so, ping #announcements saying the run is in an hour.
     """
     async def pingServerForRun(self):
         await self.wait_until_ready()
-        schedule_channel = self.get_channel(OFFICIAL_SCHEDULE_CHANNEL)
         announcements_channel = self.get_channel(OFFICIAL_ANNOUNCEMENTS_CHANNEL)
         while not self.is_closed():
-            runTimes = await schedule_channel.history(limit=1).flatten()
-            lastMessage = runTimes[0].content
-            # Don't do anything if we're still voting on the upcoming week's schedule
-            if lastMessage.find("This week's CEO Schedule:") != -1:
-                self._logger.info("Schedule is posted! Now checking time..")
+            time = 30 # Default to 30 second checks unless specified otherwise
+            # If today is Sunday, no runs. Just voting on this week's schedule.
+            if not datetime.today().astimezone(pytz.timezone("US/Eastern")).strftime("%A") == 'Sunday':
+                runTimes = getRunTimes(self._db)
 
-                times = getRunAlertTimes(lastMessage) # Gets 24hr format
                 est = pytz.timezone("US/Eastern") # Convert from UTC to EST
                 now = datetime.today().astimezone(est).strftime("%A %H") # Format ex: Friday 21 (9PM)
-                if now in times:
-                    msg = "CEO in one hour! @here"
+                if now in runTimes:
+                    msg = "CEO in one hour! @everyone"
 
                     """
                     Verify we haven't already pinged today (in case Heroku resets the bot during the hour
@@ -158,6 +164,7 @@ class TTRClient(discord.Client):
                     today = datetime.today().astimezone(est).strftime("%B %d %Y")  # Format: May 23 2020
                     if announcement == msg and lastPingDate == today:
                         self._logger.error("ALREADY PINGED SERVER. YIKES")
+                        time = 3600
                     else:
                         self._logger.info("IT'S CEO TIME. Pinging!")
                         # Alert announcements we have a CEO in one hour!
@@ -165,13 +172,13 @@ class TTRClient(discord.Client):
                         time = 3600 # Wait an hour so we don't ping every minute this hour
                         self._logger.info("Timer sleeping to 3600ms")
                 else:
-                    self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(times[0]) + " and " + str(times[1]) + ".")
-                    time = 300 # Wait 5 minutes to prevent rate limit exception
+                    self._logger.info("It's currently " + str(now) + ". Gonna ping at " + str(runTimes[0]) + " and " + str(runTimes[1]) + ".")
+                    time = 30 # Check every 30 seconds because yolo, rate limiting is not a concern at this point.
             else:
-                self._logger.info("No schedule for this week yet..")
-                time = 300 # Wait 5 minutes to prevent rate limit exception.
+                self._logger.info("It's Sunday. No schedule for this week yet..")
+                time = 3600 # Wait one hour at a time until Sunday is over
 
-            await asyncio.sleep(time) # Check every minute
+            await asyncio.sleep(time) # Sleep for a bit and then recheck everything.
 
     async def on_message(self, message):
         # await client.change_presence(game=discord.Game(name="I'm being updated!"))
@@ -254,9 +261,7 @@ class TTRClient(discord.Client):
 
     async def wipe_message(self, message):
         msg = ""
-        if verifyRole(
-            "{0.author.top_role}".format(message)
-        ):  # User has permission to wipe queue
+        if verifyRole(message.author):  # User has permission to wipe queue
             wipeDB(self._db)
             msg = "Emptied queue!"
         else:
