@@ -2,9 +2,12 @@
     Checks the user's role to verify whether they are trustworthy enough to
     wipe the queue
 """
-def verifyRole(role):
-    roles = ["Aged Gouda", "GOAT Cheese", "staff", "Cheese++", "Chief Cheeses"]
-    return role in roles
+def verifyRole(author):
+    acceptedRoles = ["Aged Gouda", "Cheese Executives", "Cheese Graters", "Holey Swiss", "GOAT Cheese", "staff", "Cheese++", "Chief Cheeses"]
+    for name in author.roles:
+        if name.name in acceptedRoles:
+            return True
+    return False
 
 """
 The 'Fire Value' is the BC level + 28.
@@ -39,12 +42,12 @@ Ex: If everyone in the group averages to be BC 35, the avg value is 63 (5 fires)
 def calculateFires(avgFireVal):
     x = int(avgFireVal)
     if x < 17:
-        return 1
-    elif x < 33:
         return 2
-    elif x < 48:
+    elif x < 33:
         return 3
-    elif x < 63:
+    elif x < 48:
         return 4
-    else:
+    elif x < 63:
         return 5
+    else:
+        return 6

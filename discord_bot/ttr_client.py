@@ -261,9 +261,7 @@ class TTRClient(discord.Client):
 
     async def wipe_message(self, message):
         msg = ""
-        if verifyRole(
-            "{0.author.top_role}".format(message)
-        ):  # User has permission to wipe queue
+        if verifyRole(message.author):  # User has permission to wipe queue
             wipeDB(self._db)
             msg = "Emptied queue!"
         else:
